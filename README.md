@@ -25,3 +25,7 @@ To run this project locally, follow these steps:
     ```
 
 5.  Open your web browser and navigate to `http://localhost:3100`. The application connects to a remote PostgreSQL database, so no local database setup is required. You will, however, need an active internet connection.
+
+## Deploying to AWS
+
+For instructions on how to deploy this application to AWS, see the [deployment guide](DEPLOY.md).
