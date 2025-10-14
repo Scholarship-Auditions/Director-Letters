@@ -66,3 +66,20 @@ Once the environment has been updated, you can access your application by clicki
 *   **Database Schema:** You will need to manually create the necessary tables in your new RDS database. You can do this by connecting to the database with a tool like `psql` or a graphical client and running the SQL statements from the original project.
 *   **Troubleshooting:** If you encounter issues, check the logs in the Elastic Beanstalk dashboard for more information.
 *   **Security:** For a production environment, it is recommended to configure a VPC and security groups to restrict database access to only your Elastic Beanstalk instances. The instructions above with public access are for simplicity.
+
+## Step 5: Automate Deployment with GitHub Actions
+
+To automatically deploy your application to Elastic Beanstalk whenever you push changes to the `main` branch, you need to add your AWS credentials as secrets to your GitHub repository.
+
+1.  **Create an IAM User in AWS:**
+    *   It's a best practice to create a dedicated IAM user with programmatic access and the minimum required permissions to deploy to Elastic Beanstalk. Grant this user the `AWSElasticBeanstalkFullAccess` policy.
+    *   When you create the user, you will get an **Access Key ID** and a **Secret Access Key**. **Save these securely.**
+
+2.  **Add Secrets to Your GitHub Repository:**
+    *   In your GitHub repository, go to "Settings" > "Secrets and variables" > "Actions."
+    *   Click "New repository secret."
+    *   Create two new secrets:
+        *   `AWS_ACCESS_KEY_ID`: Your AWS Access Key ID.
+        *   `AWS_SECRET_ACCESS_KEY`: Your AWS Secret Access Key.
+
+Once you have added these secrets, the GitHub Actions workflow will be able to securely connect to your AWS account and deploy your application.

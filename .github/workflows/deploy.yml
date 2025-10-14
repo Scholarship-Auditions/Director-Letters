@@ -1,0 +1,27 @@
+name: Deploy to AWS Elastic Beanstalk
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Create ZIP deployment package
+        run: zip -r deploy.zip . -x ".git/*" ".github/*"
+
+      - name: Deploy to AWS Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v21
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: directors-letters
+          environment_name: directors-letters-env
+          region: us-east-2 # Important: Change this to the AWS region you are using
+          version_label: ${{ github.run_number }}-${{ github.sha }}
+          deployment_package: deploy.zip
