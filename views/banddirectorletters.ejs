@@ -1,0 +1,45 @@
+<%- include('partials/header') -%>
+
+<main class="letters-container">
+    <section class="letters-hero">          
+        <h1 class="letters-hero-title">Band Director Letters</h1>           
+    </section>
+
+    <section class="letters-section">
+        <div class="letter-type">
+            <h2>List of Band Director Letters</h2>
+            <form action="/band-director-letters" method="GET">
+                <input type="text" name="search" placeholder="Search letters" value="<%= searchQuery %>">
+                <select name="category">
+                    <option value="">All Categories</option>
+                    <% lettercategories.forEach(function(category) { %>
+                    <option value="<%= category.category_id %>" <% if (categoryFilter == category.category_id) { %>selected<% } %>>
+                        <%= category.name %>
+                    </option>
+                    <% }); %>
+                </select>
+                <button type="submit">Search</button>
+            </form>
+            <div class="letters">
+                <% if (letters.length > 0) { %>
+                <% letters.forEach(function(letter) { %>
+                <div class="letter">
+                    <h3><%= letter.title %></h3>
+                    <p><%= letter.content %></p>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.Lorem ipsum dolor sit amet, consectetur.</p>
+                    <h5>Writer: <%= letter.writer_name %></h5>
+                    <h5>For: <%= letter.recipient_name %></h5>
+                    <h5>Category <%= letter.category_name %></h5>
+                    <a href="/letters/<%= letter.letter_id %>" class="btn btn-primary">View Index</a>
+                    <!-- Add more details based on your letter schema -->
+                </div>
+                <% }); %>
+                <% } else { %>
+                <p>No letters found.</p>
+                <% } %>
+            </div>
+        </div>
+    </section>
+</main>
+
+<%- include('partials/footer') -%>

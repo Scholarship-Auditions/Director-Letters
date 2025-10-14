@@ -1,0 +1,25 @@
+<%- include('partials/header') -%>
+
+<main class="letter-index-container">
+  <section class="letter-index-hero">
+    <h1 class="letter-index-hero-title"><%= letter.title %></h1>
+  </section>
+
+  <section class="letter-index-section">
+    <div class="letter">
+      <h1><%= letter.title %></h1>
+<div>
+  <iframe id="docViewer" src="/view-docx/<%= letter.letter_id %>"></iframe>
+</div>
+
+<script src="/js/viewer.min.js"></script>
+<script>
+  // Initialize Viewer.js for the document iframe
+  const docViewer = new Viewer(document.getElementById('docViewer'));
+</script>
+
+    </div>
+  </section>
+</main>
+
+<%- include('partials/footer') -%>

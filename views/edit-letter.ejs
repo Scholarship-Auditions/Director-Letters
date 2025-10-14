@@ -1,0 +1,51 @@
+<%- include('partials/header') -%>
+
+<main class="edit-letter-container">
+  <section class="edit-letter-hero">
+    <h1 class="edit-letter-hero-title">Edit Letter</h1>
+  </section>
+
+  <section class="edit-letter-section">
+    <div class="letter-form">
+        <form action="/letters/<%= letter.letter_id %>/edit" method="POST">
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="title" value="<%= letter.title %>" required>
+        <label for="content">Content:</label>
+        <textarea id="content" name="content" required><%= letter.content %></textarea>
+
+        <!-- Add input fields for writer, recipient, category selection -->
+        <label for="writer">Writer:</label>
+        <select name="writer" required>
+          <!-- Populate the options with the writer names from your database -->
+          <% letterwriters.forEach(function(writer) { %>
+            <option value="<%= writer.writer_id %>" <% if (writer.writer_id === letter.writer_id) { %>selected<% } %>>
+              <%= writer.name %>
+            </option>
+          <% }); %>
+        </select>
+        <label for="recipient">Recipient:</label>
+        <select name="recipient" required>
+          <!-- Populate the options with the recipient names from your database -->
+          <% letterrecipients.forEach(function(recipient) { %>
+            <option value="<%= recipient.recipient_id %>" <% if (recipient.recipient_id === letter.recipient_id) { %>selected<% } %>>
+              <%= recipient.name %>
+            </option>
+          <% }); %>
+        </select>
+        <label for="category">Category:</label>
+        <select name="category" required>
+          <!-- Populate the options with the category names from your database -->
+          <% lettercategories.forEach(function(category) { %>
+            <option value="<%= category.category_id %>" <% if (category.category_id === letter.category_id) { %>selected<% } %>>
+              <%= category.name %>
+            </option>
+          <% }); %>
+        </select>
+
+        <button type="submit">Update Letter</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<%- include('partials/footer') -%>
