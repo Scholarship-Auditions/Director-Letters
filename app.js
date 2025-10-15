@@ -183,7 +183,7 @@ app.get('/letters', function (req, res) {
   const categoryFilter = req.query.category || '';
 
   // Fetch letter categories from the database
-  const categoryQuery = 'SELECT * FROM directors_letters_db.lettercategories';
+  const categoryQuery = 'SELECT * FROM lettercategories';
   pool.query(categoryQuery, (err, categoryResult) => {
     if (err) {
       console.error('Error retrieving letter categories from the database:', err);
@@ -195,10 +195,10 @@ app.get('/letters', function (req, res) {
     // Modify the SQL query to include the WHERE clause for filtering based on searchQuery and categoryFilter
     const query = `
       SELECT l.*, w.name AS writer_name, r.name AS recipient_name, c.name AS category_name
-      FROM directors_letters_db.letters l
-      INNER JOIN directors_letters_db.letterwriters w ON l.writer_id = w.writer_id
-      INNER JOIN directors_letters_db.letterrecipients r ON l.recipient_id = r.recipient_id
-      INNER JOIN directors_letters_db.lettercategories c ON l.category_id = c.category_id
+      FROM letters l
+      INNER JOIN letterwriters w ON l.writer_id = w.writer_id
+      INNER JOIN letterrecipients r ON l.recipient_id = r.recipient_id
+      INNER JOIN lettercategories c ON l.category_id = c.category_id
       WHERE (l.title ILIKE $1 OR l.content::text ILIKE $1)
       ${categoryFilter ? 'AND c.category_id = $2' : ''}
     `;
@@ -229,7 +229,7 @@ app.post('/letters', upload, function (req, res) {
   const file = req.file;
 
   // Perform database query to insert the new letter
-  const query = 'INSERT INTO directors_letters_db.letters (title, content, writer_id, recipient_id, category_id) VALUES ($1, $2, $3, $4, $5)';
+  const query = 'INSERT INTO letters (title, content, writer_id, recipient_id, category_id) VALUES ($1, $2, $3, $4, $5)';
   const values = [title, file.buffer, writer, recipient, category];
 
   pool.query(query, values, (err, result) => {
@@ -245,7 +245,7 @@ app.post('/letters', upload, function (req, res) {
 // Download .docx file
 app.get('/letters/:id/download', function (req, res) {
   const letterId = req.params.id;
-  const query = 'SELECT * FROM directors_letters_db.letters WHERE letter_id = $1';
+  const query = 'SELECT * FROM letters WHERE letter_id = $1';
 
   pool.query(query, [letterId], (err, result) => {
     if (err) {
@@ -277,9 +277,9 @@ app.get('/letters/:id/download', function (req, res) {
 // Render the form for adding a new letter
 app.get('/add-letter', isLoggedIn, function (req, res) {
   // Fetch the writer, recipient, and category data from the database
-  const writerQuery = 'SELECT * FROM directors_letters_db.letterwriters';
-  const recipientQuery = 'SELECT * FROM directors_letters_db.letterrecipients';
-  const categoryQuery = 'SELECT * FROM directors_letters_db.lettercategories';
+  const writerQuery = 'SELECT * FROM letterwriters';
+  const recipientQuery = 'SELECT * FROM letterrecipients';
+  const categoryQuery = 'SELECT * FROM lettercategories';
 
   // Use Promise.all to execute all queries simultaneously
   Promise.all([
@@ -329,7 +329,7 @@ app.post('/add-letter', isLoggedIn, function (req, res) {
         const htmlContent = result.value;
 
         // Store the letter data in the database
-        const query = 'INSERT INTO directors_letters_db.letters (title, content, writer_id, recipient_id, category_id) VALUES ($1, $2, $3, $4, $5)';
+        const query = 'INSERT INTO letters (title, content, writer_id, recipient_id, category_id) VALUES ($1, $2, $3, $4, $5)';
         const values = [title, htmlContent, writer, recipient, category];
 
         pool.query(query, values, (dbErr) => {
@@ -353,11 +353,11 @@ app.post('/add-letter', isLoggedIn, function (req, res) {
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));// Render the form for adding a new letter
-app.get('/add-letter', function (req, res) {
+app.get('/add-letter', isLoggedIn, function (req, res) {
   // Fetch the writer, recipient, and category data from the database
-  const writerQuery = 'SELECT * FROM directors_letters_db.letterwriters';
-  const recipientQuery = 'SELECT * FROM directors_letters_db.letterrecipients';
-  const categoryQuery = 'SELECT * FROM directors_letters_db.lettercategories';
+  const writerQuery = 'SELECT * FROM letterwriters';
+  const recipientQuery = 'SELECT * FROM letterrecipients';
+  const categoryQuery = 'SELECT * FROM lettercategories';
 
   // Use Promise.all to execute all queries simultaneously
   Promise.all([
@@ -383,7 +383,7 @@ app.get('/add-letter', function (req, res) {
 });
 
 // Handle the submission of the new letter form
-app.post('/add-letter', function (req, res) {
+app.post('/add-letter', isLoggedIn, function (req, res) {
   upload(req, res, function (err) {
     if (err instanceof multer.MulterError) {
       console.error('Error uploading file:', err);
@@ -407,7 +407,7 @@ app.post('/add-letter', function (req, res) {
         const htmlContent = result.value;
 
         // Store the letter data in the database
-        const query = 'INSERT INTO directors_letters_db.letters (title, content, writer_id, recipient_id, category_id) VALUES ($1, $2, $3, $4, $5)';
+        const query = 'INSERT INTO letters (title, content, writer_id, recipient_id, category_id) VALUES ($1, $2, $3, $4, $5)';
         const values = [title, htmlContent, writer, recipient, category];
 
         pool.query(query, values, (dbErr) => {
@@ -433,7 +433,7 @@ app.post('/add-letter', function (req, res) {
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.get('/letters/:id', function(req, res) {
   const letterId = req.params.id;
-  const query = 'SELECT * FROM directors_letters_db.letters WHERE letter_id = $1';
+  const query = 'SELECT * FROM letters WHERE letter_id = $1';
   pool.query(query, [letterId], (err, result) => {
     if (err) {
       console.error('Error retrieving letter from the database:', err);
@@ -451,7 +451,7 @@ app.get('/letters/:id', function(req, res) {
 
 app.get('/view-docx/:id', function(req, res) {
   const letterId = req.params.id;
-  const query = 'SELECT * FROM directors_letters_db.letters WHERE letter_id = $1';
+  const query = 'SELECT * FROM letters WHERE letter_id = $1';
   pool.query(query, [letterId], (err, result) => {
     if (err) {
       console.error('Error retrieving letter from the database:', err);
@@ -496,10 +496,10 @@ app.get('/view-docx/:id', function(req, res) {
 // Edit letter page
 app.get('/letters/:id/edit', isLoggedIn, function(req, res) {
   const letterId = req.params.id;
-  const queryLetter = 'SELECT * FROM directors_letters_db.letters WHERE letter_id = $1';
-  const queryWriters = 'SELECT * FROM directors_letters_db.letterwriters';
-  const queryRecipients = 'SELECT * FROM directors_letters_db.letterrecipients';
-  const queryCategories = 'SELECT * FROM directors_letters_db.lettercategories';
+  const queryLetter = 'SELECT * FROM letters WHERE letter_id = $1';
+  const queryWriters = 'SELECT * FROM letterwriters';
+  const queryRecipients = 'SELECT * FROM letterrecipients';
+  const queryCategories = 'SELECT * FROM lettercategories';
 
   pool.query(queryLetter, [letterId], (err, resultLetter) => {
     if (err) {
@@ -557,7 +557,7 @@ app.post('/letters/:id/edit', isLoggedIn, function(req, res) {
   const letterId = req.params.id;
   const { title, content, writer, recipient, category } = req.body;
 
-  const updateQuery = 'UPDATE directors_letters_db.letters SET title = $1, content = $2, writer_id = $3, recipient_id = $4, category_id = $5 WHERE letter_id = $6';
+  const updateQuery = 'UPDATE letters SET title = $1, content = $2, writer_id = $3, recipient_id = $4, category_id = $5 WHERE letter_id = $6';
   const updateValues = [title, content, writer, recipient, category, letterId];
 
   pool.query(updateQuery, updateValues, (err, result) => {
@@ -575,7 +575,7 @@ app.post('/letters/:id/edit', isLoggedIn, function(req, res) {
 // Delete letter
 app.delete('/letters/:id', isLoggedIn, function(req, res) {
   const letterId = req.params.id;
-  const query = 'DELETE FROM directors_letters_db.letters WHERE letter_id = $1';
+  const query = 'DELETE FROM letters WHERE letter_id = $1';
   pool.query(query, [letterId], (err) => {
     if (err) {
       console.error('Error deleting letter:', err);
@@ -588,7 +588,7 @@ app.delete('/letters/:id', isLoggedIn, function(req, res) {
 
 app.post('/letters/:id/delete', isLoggedIn, function(req, res) {
   const letterId = req.params.id;
-  const query = 'DELETE FROM directors_letters_db.letters WHERE letter_id = $1';
+  const query = 'DELETE FROM letters WHERE letter_id = $1';
 
   pool.query(query, [letterId], (err, result) => {
     if (err) {
@@ -624,10 +624,10 @@ app.get('/band-director-letters', function(req, res) {
         lr.name AS recipient_name,
         lc.name AS category_name
     FROM
-        directors_letters_db.letters l
-        JOIN directors_letters_db.letterwriters lw ON l.writer_id = lw.writer_id
-        JOIN directors_letters_db.letterrecipients lr ON l.recipient_id = lr.recipient_id
-        JOIN directors_letters_db.lettercategories lc ON l.category_id = lc.category_id
+        letters l
+        JOIN letterwriters lw ON l.writer_id = lw.writer_id
+        JOIN letterrecipients lr ON l.recipient_id = lr.recipient_id
+        JOIN lettercategories lc ON l.category_id = lc.category_id
     WHERE
         lw.name = 'Band Director'
         ${categoryFilter ? `AND lc.category_id = ${categoryFilter}` : ''}
@@ -643,7 +643,7 @@ app.get('/band-director-letters', function(req, res) {
     const letters = result.rows;
 
     // Get all letter categories for the filter dropdown
-    const categoryQuery = 'SELECT * FROM directors_letters_db.lettercategories';
+    const categoryQuery = 'SELECT * FROM lettercategories';
     pool.query(categoryQuery, (categoryErr, categoryResult) => {
       if (categoryErr) {
         console.error('Error retrieving letter categories from the database:', categoryErr);
@@ -676,10 +676,10 @@ app.get('/choir-director-letters', function(req, res) {
         lr.name AS recipient_name,
         lc.name AS category_name
     FROM
-        directors_letters_db.letters l
-        JOIN directors_letters_db.letterwriters lw ON l.writer_id = lw.writer_id
-        JOIN directors_letters_db.letterrecipients lr ON l.recipient_id = lr.recipient_id
-        JOIN directors_letters_db.lettercategories lc ON l.category_id = lc.category_id
+        letters l
+        JOIN letterwriters lw ON l.writer_id = lw.writer_id
+        JOIN letterrecipients lr ON l.recipient_id = lr.recipient_id
+        JOIN lettercategories lc ON l.category_id = lc.category_id
     WHERE
         lw.name = 'Choir Director'
         ${categoryFilter ? `AND lc.category_id = ${categoryFilter}` : ''}
@@ -695,7 +695,7 @@ app.get('/choir-director-letters', function(req, res) {
     const letters = result.rows;
 
     // Get all letter categories for the filter dropdown
-    const categoryQuery = 'SELECT * FROM directors_letters_db.lettercategories';
+    const categoryQuery = 'SELECT * FROM lettercategories';
     pool.query(categoryQuery, (categoryErr, categoryResult) => {
       if (categoryErr) {
         console.error('Error retrieving letter categories from the database:', categoryErr);
@@ -729,10 +729,10 @@ app.get('/orchestra-director-letters', function(req, res) {
         lr.name AS recipient_name,
         lc.name AS category_name
     FROM
-        directors_letters_db.letters l
-        JOIN directors_letters_db.letterwriters lw ON l.writer_id = lw.writer_id
-        JOIN directors_letters_db.letterrecipients lr ON l.recipient_id = lr.recipient_id
-        JOIN directors_letters_db.lettercategories lc ON l.category_id = lc.category_id
+        letters l
+        JOIN letterwriters lw ON l.writer_id = lw.writer_id
+        JOIN letterrecipients lr ON l.recipient_id = lr.recipient_id
+        JOIN lettercategories lc ON l.category_id = lc.category_id
     WHERE
         lw.name = 'Orchestra Director'
         ${categoryFilter ? `AND lc.category_id = ${categoryFilter}` : ''}
@@ -748,7 +748,7 @@ app.get('/orchestra-director-letters', function(req, res) {
     const letters = result.rows;
 
     // Get all letter categories for the filter dropdown
-    const categoryQuery = 'SELECT * FROM directors_letters_db.lettercategories';
+    const categoryQuery = 'SELECT * FROM lettercategories';
     pool.query(categoryQuery, (categoryErr, categoryResult) => {
       if (categoryErr) {
         console.error('Error retrieving letter categories from the database:', categoryErr);
@@ -781,10 +781,10 @@ app.get('/musical-theater-director-letters', function(req, res) {
         lr.name AS recipient_name,
         lc.name AS category_name
     FROM
-        directors_letters_db.letters l
-        JOIN directors_letters_db.letterwriters lw ON l.writer_id = lw.writer_id
-        JOIN directors_letters_db.letterrecipients lr ON l.recipient_id = lr.recipient_id
-        JOIN directors_letters_db.lettercategories lc ON l.category_id = lc.category_id
+        letters l
+        JOIN letterwriters lw ON l.writer_id = lw.writer_id
+        JOIN letterrecipients lr ON l.recipient_id = lr.recipient_id
+        JOIN lettercategories lc ON l.category_id = lc.category_id
     WHERE
         lw.name = 'Musical Theater Director'
         ${categoryFilter ? `AND lc.category_id = ${categoryFilter}` : ''}
@@ -800,7 +800,7 @@ app.get('/musical-theater-director-letters', function(req, res) {
     const letters = result.rows;
 
     // Get all letter categories for the filter dropdown
-    const categoryQuery = 'SELECT * FROM directors_letters_db.lettercategories';
+    const categoryQuery = 'SELECT * FROM lettercategories';
     pool.query(categoryQuery, (categoryErr, categoryResult) => {
       if (categoryErr) {
         console.error('Error retrieving letter categories from the database:', categoryErr);
@@ -826,7 +826,7 @@ app.get('/musical-theater-director-letters', function(req, res) {
 ///sql connection
 const db = require('./db');
 
-db.query('SELECT * FROM directors_letters_db.lettercategories', (err, results) => {
+db.query('SELECT * FROM lettercategories', (err, results) => {
   if (err) {
     console.error('Error executing query:', err);
     return;

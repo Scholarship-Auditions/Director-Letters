@@ -65,7 +65,7 @@ Once the environment has been updated, you can access your application by clicki
 
 ## Additional Notes
 
-*   **Database Schema:** You will need to manually create the necessary tables in your new RDS database. You can do this by connecting to the database with a tool like `psql` or a graphical client and running the SQL statements from the original project.
+*   **Database Schema:** The database tables are created automatically by the migration system in the default `public` schema. All application queries reference these tables directly without a schema prefix.
 *   **Troubleshooting:** If you encounter issues, check the logs in the Elastic Beanstalk dashboard for more information.
 *   **Security:** For a production environment, it is recommended to configure a VPC and security groups to restrict database access to only your Elastic Beanstalk instances. The instructions above with public access are for simplicity.
 
