@@ -245,3 +245,32 @@ If you prefer to deploy the application manually from the AWS Management Console
 ### Step 4: Access Your Application
 
 Once the environment update is complete, you can access your live application by clicking the URL at the top of the Elastic Beanstalk dashboard. Remember that you will still need to set up the database schema manually as mentioned in the "Additional Notes" section.
+
+---
+
+## Troubleshooting: 504 Gateway Timeout / ETIMEDOUT Error
+
+If your application fails to load and you see a `504 Gateway Timeout` error, or if your logs show `Error: connect ETIMEDOUT`, it almost always means your Elastic Beanstalk application cannot connect to your RDS database due to a security group misconfiguration.
+
+Follow these steps to fix it:
+
+### Step 1: Find your Elastic Beanstalk Security Group
+
+1.  Navigate to the **EC2** service in the AWS Console.
+2.  In the left menu, under "Network & Security," click **Security Groups**.
+3.  Use the search bar to find the security group for your Elastic Beanstalk environment. It will usually have a name like `awseb-e-naddepcrbg-stack-AWSEBSecurityGroup-...`.
+4.  Copy the **Group ID** (it will look like `sg-0123456789abcdef0`).
+
+### Step 2: Add an Inbound Rule to your Database Security Group
+
+1.  Navigate to the **RDS** service in the AWS Console.
+2.  In the left menu, click **Databases** and select your database.
+3.  Go to the **Connectivity & security** tab.
+4.  Under "VPC security groups," click on the active security group. This will take you back to the EC2 security group console.
+5.  With the database security group selected, click the **Inbound rules** tab at the bottom, then click **Edit inbound rules**.
+6.  Click **Add rule**.
+7.  For **Type**, select **PostgreSQL** (this will automatically set the port to 5432).
+8.  For **Source**, select **Custom** and paste the **Group ID** of your Elastic Beanstalk security group that you copied in Step 1.
+9.  Click **Save rules**.
+
+This change will take effect almost immediately. Your application should now be able to connect to the database, and the timeout errors will be resolved. You may need to restart the application environment from the Elastic Beanstalk console for the changes to apply.
