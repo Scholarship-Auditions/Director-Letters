@@ -2,6 +2,41 @@
 
 This guide will walk you through the process of deploying this application to AWS using Elastic Beanstalk and setting up a PostgreSQL database with Amazon RDS.
 
+---
+
+## IMPORTANT: Initial Database Setup
+
+When you first create your AWS RDS database, it is completely empty. You **must** run the `schema.sql` script to create the necessary tables (`users`, `letters`, etc.) before the application will work. The easiest way to do this is with a graphical tool like `pgAdmin`.
+
+### Step 1: Download and Install pgAdmin
+
+*   Download and install the free `pgAdmin` tool from the [official website](https://www.pgadmin.org/download/).
+
+### Step 2: Connect to Your AWS RDS Database
+
+1.  Open pgAdmin.
+2.  Right-click on "Servers" in the left-hand browser panel and select "Register" > "Server...".
+3.  In the "General" tab, give your server a name (e.g., "AWS RDS").
+4.  Switch to the "Connection" tab and fill in the following details:
+    *   **Host name/address:** Your RDS database endpoint (you can find this in the AWS RDS console).
+    *   **Port:** `5432`
+    *   **Maintenance database:** `postgres`
+    *   **Username:** The master username you created for your database.
+    *   **Password:** The password you created for your database.
+5.  Click **Save**. pgAdmin will now connect to your database.
+
+### Step 3: Run the Schema Script
+
+1.  In pgAdmin, with your server selected, click the "Tools" menu and select "Query Tool".
+2.  This will open a new query editor panel.
+3.  Open the `schema.sql` file from this project on your local computer and copy its entire contents.
+4.  Paste the contents into the pgAdmin query editor.
+5.  Click the "Execute/Run" button (it looks like a lightning bolt icon).
+
+This will create all the necessary tables and sample data in your database. Your application should now be fully functional.
+
+---
+
 ## Prerequisites
 
 *   An AWS account. If you don't have one, you can create one [here](https://aws.amazon.com/free/).
@@ -274,3 +309,16 @@ Follow these steps to fix it:
 9.  Click **Save rules**.
 
 This change will take effect almost immediately. Your application should now be able to connect to the database, and the timeout errors will be resolved. You may need to restart the application environment from the Elastic Beanstalk console for the changes to apply.
+
+### Connecting from a Local Client (pgAdmin)
+
+If you are getting a "connection timeout expired" error when trying to connect to the database from a local client like pgAdmin, you must also grant your computer access.
+
+1.  Follow steps 1-5 in the section above to navigate to the **inbound rules** for your database's security group.
+2.  Click **Add rule**.
+3.  For **Type**, select **PostgreSQL**.
+4.  For **Source**, select **My IP**. AWS will automatically detect and fill in your computer's public IP address.
+5.  Optionally, add a **Description** like "Home IP for pgAdmin" to remember why you added this rule.
+6.  Click **Save rules**.
+
+You should now be able to connect to the database from your local machine.
