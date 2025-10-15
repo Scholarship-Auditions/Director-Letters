@@ -4,39 +4,6 @@ This guide will walk you through the process of deploying this application to AW
 
 ---
 
-## IMPORTANT: Initial Database Setup
-
-When you first create your AWS RDS database, it is completely empty. You **must** run the `schema.sql` script to create the necessary tables (`users`, `letters`, etc.) before the application will work. The easiest way to do this is with a graphical tool like `pgAdmin`.
-
-### Step 1: Download and Install pgAdmin
-
-*   Download and install the free `pgAdmin` tool from the [official website](https://www.pgadmin.org/download/).
-
-### Step 2: Connect to Your AWS RDS Database
-
-1.  Open pgAdmin.
-2.  Right-click on "Servers" in the left-hand browser panel and select "Register" > "Server...".
-3.  In the "General" tab, give your server a name (e.g., "AWS RDS").
-4.  Switch to the "Connection" tab and fill in the following details:
-    *   **Host name/address:** Your RDS database endpoint (you can find this in the AWS RDS console).
-    *   **Port:** `5432`
-    *   **Maintenance database:** `postgres`
-    *   **Username:** The master username you created for your database.
-    *   **Password:** The password you created for your database.
-5.  Click **Save**. pgAdmin will now connect to your database.
-
-### Step 3: Run the Schema Script
-
-1.  In pgAdmin, with your server selected, click the "Tools" menu and select "Query Tool".
-2.  This will open a new query editor panel.
-3.  Open the `schema.sql` file from this project on your local computer and copy its entire contents.
-4.  Paste the contents into the pgAdmin query editor.
-5.  Click the "Execute/Run" button (it looks like a lightning bolt icon).
-
-This will create all the necessary tables and sample data in your database. Your application should now be fully functional.
-
----
-
 ## Prerequisites
 
 *   An AWS account. If you don't have one, you can create one [here](https://aws.amazon.com/free/).
