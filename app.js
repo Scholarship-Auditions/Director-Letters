@@ -99,7 +99,7 @@ passport.use(
 //redirect home if not logged in
 app.get("/", function (req, res) {
   if (req.isAuthenticated()) {
-    res.redirect("/adminhome");
+    res.redirect("/home");
   } else {
     res.redirect("/home");
   }
@@ -128,7 +128,7 @@ app.get("/register", function (req, res) {
 app.post(
   "/login",
   passport.authenticate("local", {
-    successRedirect: "/adminhome",
+    successRedirect: "/home",
     failureRedirect: "/login",
   }),
   function (req, res) {}
@@ -145,7 +145,7 @@ app.post("/register", async (req, res) => {
       if (err) {
         return next(err);
       }
-      return res.redirect("/adminhome");
+      return res.redirect("/home");
     });
   } catch {
     res.redirect("/register");
