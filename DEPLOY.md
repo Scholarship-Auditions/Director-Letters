@@ -309,3 +309,16 @@ Follow these steps to fix it:
 9.  Click **Save rules**.
 
 This change will take effect almost immediately. Your application should now be able to connect to the database, and the timeout errors will be resolved. You may need to restart the application environment from the Elastic Beanstalk console for the changes to apply.
+
+### Connecting from a Local Client (pgAdmin)
+
+If you are getting a "connection timeout expired" error when trying to connect to the database from a local client like pgAdmin, you must also grant your computer access.
+
+1.  Follow steps 1-5 in the section above to navigate to the **inbound rules** for your database's security group.
+2.  Click **Add rule**.
+3.  For **Type**, select **PostgreSQL**.
+4.  For **Source**, select **My IP**. AWS will automatically detect and fill in your computer's public IP address.
+5.  Optionally, add a **Description** like "Home IP for pgAdmin" to remember why you added this rule.
+6.  Click **Save rules**.
+
+You should now be able to connect to the database from your local machine.
