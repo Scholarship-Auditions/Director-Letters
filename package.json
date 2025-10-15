@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "migrate": "node-pg-migrate up -m migrations -j js --no-check-order"
+    "migrate": "node-pg-migrate --config-file migrate-config.js up -m migrations -j js --no-check-order"
   },
   "author": "",
   "license": "ISC",
