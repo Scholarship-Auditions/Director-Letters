@@ -26,19 +26,17 @@ To run this project locally, follow these steps:
 
 5.  **Set up the database:**
     *   Install PostgreSQL on your local machine if you don't have it already.
-    *   Create a new database and user by running the following commands in your terminal:
-        ```bash
-        psql -U postgres
-        ```
-    *   This will open the PostgreSQL command line. Now, run the SQL commands from the `schema.sql` file to create the necessary tables:
-        ```sql
-        \i schema.sql
-        ```
-6.  **Start the server:**
+    *   Create a new database and user for the application.
+    *   Set the `DB_HOST`, `DB_USER`, `DB_PASSWORD`, and `DB_DATABASE` environment variables in a `.env` file or your shell.
+6.  **Run database migrations:**
+    ```bash
+    npm run migrate
+    ```
+7.  **Start the server:**
     ```bash
     npm start
     ```
-7.  Open your web browser and navigate to `http://localhost:3100`.
+8.  Open your web browser and navigate to `http://localhost:3100`.
 
 ## Deploying to AWS
 
