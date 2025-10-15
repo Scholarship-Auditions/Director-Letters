@@ -86,6 +86,112 @@ Once you have added these secrets, the GitHub Actions workflow will be able to s
 
 ---
 
+## Connecting Multiple GoDaddy Domains
+
+If you own multiple domains (e.g., `directorsletters.com` and `directorletters.com`) and want them both to lead to your application, the best practice is to choose one as your **primary domain** and have the other permanently redirect to it. This is crucial for good SEO and a consistent user experience.
+
+This guide will walk you through setting `directorsletters.com` as the primary domain and making `directorletters.com` redirect to it.
+
+### Part 1: Configure the Primary Domain (`directorsletters.com`)
+
+Follow these steps to point your main domain to your Elastic Beanstalk application.
+
+#### Step 1.1: Create a Hosted Zone in AWS Route 53
+
+1.  In the AWS Console, go to **Route 53**.
+2.  Click **Create hosted zone**.
+3.  Enter your primary domain name (e.g., `directorsletters.com`).
+4.  Select **Public hosted zone**.
+5.  Click **Create hosted zone**.
+
+#### Step 1.2: Update Nameservers in GoDaddy
+
+1.  After creating the hosted zone, Route 53 will give you four **NS (Name Server)** records. Copy these server names.
+2.  Log in to your **GoDaddy account**.
+3.  Go to your domain list and select your primary domain.
+4.  Find the DNS management section and click "Change" under Nameservers.
+5.  Select "I'll use my own nameservers" and paste the four server names you copied from Route 53.
+6.  Save your changes. **Note:** It can take up to 48 hours for these changes to fully propagate across the internet.
+
+#### Step 1.3: Get an SSL/TLS Certificate
+
+1.  In the AWS Console, go to **AWS Certificate Manager (ACM)**.
+2.  Click **Request a certificate** and choose **Request a public certificate**.
+3.  For the domain name, add both your root domain and a wildcard for subdomains:
+    *   `directorsletters.com`
+    *   `*.directorsletters.com`
+4.  Choose **DNS validation**.
+5.  Click **Request**. ACM will now ask you to create CNAME records in Route 53 to prove you own the domain. Since Route 53 is now managing your DNS, you can simply click the "Create records in Route 53" button, and ACM will do it for you.
+6.  Wait for the certificate status to change from "Pending validation" to **"Issued"**.
+
+#### Step 1.4: Configure Elastic Beanstalk Load Balancer
+
+1.  Go to your **Elastic Beanstalk** environment.
+2.  In the left menu, go to **Configuration**.
+3.  Find the **Load balancer** category and click **Edit**.
+4.  Click **Add listener**.
+5.  Set the **Port** to `443` and the **Protocol** to `HTTPS`.
+6.  Select the SSL certificate you just created from the dropdown.
+7.  Click **Add**, then **Apply** at the bottom of the page. This will update your environment.
+
+#### Step 1.5: Point Your Domain to Elastic Beanstalk
+
+1.  Go back to the **Route 53** console and select the hosted zone for your primary domain.
+2.  Click **Create record**.
+3.  Leave the record name blank (for the root domain).
+4.  Select **Record type: A**.
+5.  Enable the **Alias** toggle.
+6.  For the endpoint, choose **Alias to Elastic Beanstalk environment** and select your environment (`directors-letters-env`).
+7.  Click **Create record**.
+8.  **Repeat these steps** to create another `A` record, but this time set the record name to `www`. This will ensure `www.directorsletters.com` also works.
+
+Your primary domain is now configured!
+
+### Part 2: Configure the Secondary Domain (`directorletters.com`) for Redirection
+
+Follow these steps to make your second domain automatically redirect to your primary domain.
+
+#### Step 2.1: Create an S3 Bucket for Redirection
+
+1.  In the AWS Console, go to **S3**.
+2.  Click **Create bucket**.
+3.  The **Bucket name** must be the **exact name** of your secondary domain (e.g., `directorletters.com`).
+4.  Choose the AWS Region for your bucket.
+5.  **Uncheck "Block all public access"** and acknowledge that you are making the bucket public.
+6.  Click **Create bucket**.
+
+#### Step 2.2: Configure Bucket for Website Redirection
+
+1.  Go into the S3 bucket you just created and click the **Properties** tab.
+2.  Scroll to the bottom and find **Static website hosting**. Click **Edit**.
+3.  Enable static website hosting.
+4.  Select **Redirect requests for an object**.
+5.  For the **Host name**, enter the full URL of your primary domain (e.g., `www.directorsletters.com`).
+6.  For the **Protocol**, select `https`.
+7.  Click **Save changes**.
+
+#### Step 2.3: Set Up Route 53 and GoDaddy for the Secondary Domain
+
+1.  Follow the same steps as **1.1 and 1.2** for your secondary domain:
+    *   Create a **new hosted zone** in Route 53 for `directorletters.com`.
+    *   Copy the four new nameservers.
+    *   Update the nameservers in your GoDaddy account for this second domain.
+
+#### Step 2.4: Point the Secondary Domain to the S3 Bucket
+
+1.  Go to the Route 53 hosted zone for your **secondary domain**.
+2.  Click **Create record**.
+3.  Leave the record name blank.
+4.  Select **Record type: A**.
+5.  Enable the **Alias** toggle.
+6.  For the endpoint, choose **Alias to S3 website endpoint** and select the S3 bucket you created for redirection.
+7.  Click **Create record**.
+8.  **Repeat** for the `www` subdomain, also pointing it to the same S3 bucket.
+
+After these steps are complete and the DNS changes have propagated, anyone visiting your secondary domain will be automatically redirected to your primary domain.
+
+---
+
 ## Deploying from the AWS Console (Manual)
 
 If you prefer to deploy the application manually from the AWS Management Console instead of using the CLI or GitHub Actions, follow these steps.
