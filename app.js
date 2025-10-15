@@ -37,6 +37,11 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use(function(req, res, next){
+    res.locals.currentUser = req.user;
+    next();
+});
+
 app.use(methodOverride(function (req, res) {
   if (req.body && typeof req.body === 'object' && '_method' in req.body) {
     // look in urlencoded POST bodies and delete it
@@ -96,6 +101,49 @@ app.get("/home", function(req,res){
 app.get("/contact", function(req,res){
     res.render('contact')
 });
+
+app.get("/login", function(req,res){
+    res.render('login')
+});
+
+app.get("/register", function(req,res){
+    res.render('register')
+});
+
+app.post("/login", passport.authenticate("local", {
+    successRedirect: "/adminhome",
+    failureRedirect: "/login"
+}), function(req, res){
+});
+
+app.post("/register", function(req, res){
+    User.register({username: req.body.username}, req.body.password, function(err, user){
+        if (err) {
+            console.log(err);
+            res.redirect("/register");
+        } else {
+            passport.authenticate("local")(req, res, function(){
+                res.redirect("/adminhome");
+            });
+        }
+    });
+});
+
+app.get("/logout", function(req, res, next){
+    req.logout(function(err){
+        if(err){
+            return next(err);
+        }
+        res.redirect("/");
+    });
+});
+
+function isLoggedIn(req, res, next){
+    if(req.isAuthenticated()){
+        return next();
+    }
+    res.redirect("/login");
+}
 
 app.get('/aboutus', function(req,res){
     res.render('about')
@@ -208,7 +256,7 @@ app.get('/letters/:id/download', function (req, res) {
 
 
 // Render the form for adding a new letter
-app.get('/add-letter', function (req, res) {
+app.get('/add-letter', isLoggedIn, function (req, res) {
   // Fetch the writer, recipient, and category data from the database
   const writerQuery = 'SELECT * FROM directors_letters_db.letterwriters';
   const recipientQuery = 'SELECT * FROM directors_letters_db.letterrecipients';
@@ -238,7 +286,7 @@ app.get('/add-letter', function (req, res) {
 });
 
 // Handle the submission of the new letter form
-app.post('/add-letter', function (req, res) {
+app.post('/add-letter', isLoggedIn, function (req, res) {
   upload(req, res, function (err) {
     if (err instanceof multer.MulterError) {
       console.error('Error uploading file:', err);
@@ -427,7 +475,7 @@ app.get('/view-docx/:id', function(req, res) {
 
 
 // Edit letter page
-app.get('/letters/:id/edit', function(req, res) {
+app.get('/letters/:id/edit', isLoggedIn, function(req, res) {
   const letterId = req.params.id;
   const queryLetter = 'SELECT * FROM directors_letters_db.letters WHERE letter_id = $1';
   const queryWriters = 'SELECT * FROM directors_letters_db.letterwriters';
@@ -486,7 +534,7 @@ app.get('/letters/:id/edit', function(req, res) {
 });
 
 // Update letter
-app.post('/letters/:id/edit', function(req, res) {
+app.post('/letters/:id/edit', isLoggedIn, function(req, res) {
   const letterId = req.params.id;
   const { title, content, writer, recipient, category } = req.body;
 
@@ -506,7 +554,7 @@ app.post('/letters/:id/edit', function(req, res) {
 
 
 // Delete letter
-app.delete('/letters/:id', function(req, res) {
+app.delete('/letters/:id', isLoggedIn, function(req, res) {
   const letterId = req.params.id;
   const query = 'DELETE FROM directors_letters_db.letters WHERE letter_id = $1';
   pool.query(query, [letterId], (err) => {
@@ -519,7 +567,7 @@ app.delete('/letters/:id', function(req, res) {
   });
 });
 
-app.post('/letters/:id/delete', function(req, res) {
+app.post('/letters/:id/delete', isLoggedIn, function(req, res) {
   const letterId = req.params.id;
   const query = 'DELETE FROM directors_letters_db.letters WHERE letter_id = $1';
 

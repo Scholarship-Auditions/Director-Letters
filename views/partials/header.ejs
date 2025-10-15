@@ -24,6 +24,10 @@
     </li>
     <li><a href="/aboutus">About</a></li>
     <li><a href="/contact">Contact</a></li>
-    <li><a href="/add-letter">Add Letter</a></li>
+    <% if(currentUser){ %>
+      <li><a href="/logout">Logout</a></li>
+    <% } else { %>
+      <li><a href="/login">Admin Login</a></li>
+    <% } %>
   </ul>
 </header>

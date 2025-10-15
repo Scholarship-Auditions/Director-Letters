@@ -8,6 +8,9 @@
     <section class="letters-section">
         <div class="letter-type">
             <h2>List of Letters</h2>
+            <% if(currentUser){ %>
+              <a href="/add-letter" class="btn btn-primary" style="margin-bottom: 20px;">Add New Letter</a>
+            <% } %>
             <form action="/letters" method="GET">
                 <input type="text" name="search" placeholder="Search letters" value="<%= searchQuery %>">
                 <select name="category">

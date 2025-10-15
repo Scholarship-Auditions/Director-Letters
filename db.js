@@ -2,14 +2,11 @@
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  host: process.env.DB_HOST || 'postgres-1.cm6stysu1no9.us-east-2.rds.amazonaws.com',
+  host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'Matrixtate',
-  database: process.env.DB_DATABASE || 'postgres',
-  port: 5432,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  password: process.env.DB_PASSWORD || 'password',
+  database: process.env.DB_DATABASE || 'directors_letters_db',
+  port: process.env.DB_PORT || 5432,
 });
 
 pool.connect((err) => {
