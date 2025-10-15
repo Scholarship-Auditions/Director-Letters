@@ -2,13 +2,12 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const _ =require('lodash');
-const mongoose = require("mongoose");
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const path = require('path');
 const session = require('express-session');
 const passport = require('passport');
-passportLocalMongoose = require('passport-local-mongoose')
+const LocalStrategy = require('passport-local').Strategy;
 const methodOverride = require('method-override');
 const { stringify } = require("querystring");
 const multer = require('multer');
@@ -51,25 +50,42 @@ app.use(methodOverride(function (req, res) {
   }
 }))
 
-const userSchema = new mongoose.Schema ({
-    email: String,
-    password: String,
-
-});
-
-userSchema.plugin(passportLocalMongoose)
-
-const User = new mongoose.model("User", userSchema)
-
-passport.use(User.createStrategy());
-
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
-
 
 const homeStartingContent = "";
 const aboutContent = " about zach";
 const contactContent = "contact zach";
+
+passport.serializeUser(function(user, done) {
+  done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done) {
+  pool.query('SELECT * FROM users WHERE id = $1', [id], (err, result) => {
+    if (err) { return done(err); }
+    done(null, result.rows[0]);
+  });
+});
+
+passport.use(new LocalStrategy(
+  function(username, password, done) {
+    pool.query('SELECT * FROM users WHERE username = $1', [username], (err, result) => {
+      if (err) { return done(err); }
+      if (result.rows.length === 0) {
+        return done(null, false, { message: 'Incorrect username.' });
+      }
+      const user = result.rows[0];
+      bcrypt.compare(password, user.password, (err, res) => {
+        if (res) {
+          // passwords match! log user in
+          return done(null, user);
+        } else {
+          // passwords do not match!
+          return done(null, false, { message: "Incorrect password" });
+        }
+      });
+    });
+  }
+));
 
 
 
@@ -116,17 +132,20 @@ app.post("/login", passport.authenticate("local", {
 }), function(req, res){
 });
 
-app.post("/register", function(req, res){
-    User.register({username: req.body.username}, req.body.password, function(err, user){
-        if (err) {
-            console.log(err);
-            res.redirect("/register");
-        } else {
-            passport.authenticate("local")(req, res, function(){
-                res.redirect("/adminhome");
-            });
-        }
-    });
+app.post("/register", async (req, res) => {
+    try {
+        const hashedPassword = await bcrypt.hash(req.body.password, 10);
+        const newUser = await pool.query(
+            "INSERT INTO users (username, password) VALUES ($1, $2) RETURNING *",
+            [req.body.username, hashedPassword]
+        );
+        req.login(newUser.rows[0], function(err) {
+            if (err) { return next(err); }
+            return res.redirect('/adminhome');
+        });
+    } catch {
+        res.redirect("/register");
+    }
 });
 
 app.get("/logout", function(req, res, next){
