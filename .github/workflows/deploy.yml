@@ -1,4 +1,4 @@
-name: Deploy to AWS Elastic Beanstalk
+name: Deploy to AWS
 
 on:
   push:
@@ -6,14 +6,22 @@ on:
       - main
 
 jobs:
-  deploy:
+  deploy-backend:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install backend dependencies
+        run: npm install
+
       - name: Create ZIP deployment package
-        run: zip -r deploy.zip . -x ".git/*" ".github/*"
+        run: zip -r deploy.zip . -x ".git/*" ".github/*" "client/*"
 
       - name: Deploy to AWS Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v21
@@ -22,6 +30,35 @@ jobs:
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           application_name: directors-letters
           environment_name: directors-letters-env
-          region: us-east-2 # Important: Change this to the AWS region you are using
+          region: us-east-2
           version_label: ${{ github.run_number }}-${{ github.sha }}
           deployment_package: deploy.zip
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install frontend dependencies
+        working-directory: ./client
+        run: npm install
+
+      - name: Build React App
+        working-directory: ./client
+        run: npm run build
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: us-east-2
+
+      - name: Deploy to S3
+        run: aws s3 sync ./client/dist s3://directors-letters-frontend

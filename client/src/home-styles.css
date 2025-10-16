@@ -1,0 +1,572 @@
+/* --------HEADER/NAV--------- */
+
+* {
+    padding: 0;
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+ul.nav {
+    list-style: none;
+    background: rgb(6, 6, 6);
+    margin-bottom: auto;
+}
+
+ul.nav li {
+    display: inline-block;
+    position: relative;
+}
+
+ul.nav li a {
+    display: block;
+    padding: 20px 25px;
+    color: #FFF;
+    text-decoration: none;
+    text-align: center;
+    font-size: 18px;
+}
+
+ul.nav li ul.dropdown li {
+    display: block;
+}
+
+ul.nav li ul.dropdown{
+    width: 270%;
+    background: rgba(245, 211, 122, 0.8);
+    position: absolute;
+    z-index: 999;
+    display: none;
+}
+
+ul.nav li a:hover {
+    background: #f5d37a;
+}
+
+ul.nav li:hover ul.dropdown{
+    display: block;
+}
+
+.nav {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+
+
+/* --------FOOTER---------*/
+
+footer{
+    background-color: #222;
+    color: white;
+    font-family: 'Poppins', sans-serif;
+    padding-top: 3rem;
+    padding-bottom: 2rem;
+}
+
+.footer-container{
+    display: flex;
+    justify-content: space-evenly;
+    flex-wrap: wrap;
+    text-align: center;
+    margin-left: 15rem;
+    margin-right: 15rem;
+}
+
+.links-wrapper{
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-size: 13px;
+}
+
+.links-wrapper h2{
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.link-list {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: left;
+}
+
+.link-list li{
+    list-style: none;
+}
+
+.link-list a{
+    color: white;
+}
+
+.social-links{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.social-links li{
+    list-style: none;
+    font-size: 20px;
+    margin: 1rem;
+    color: white;
+}
+
+.fineprint{
+    text-align: center;
+}
+
+
+
+/*-------HOME PAGE--------*/
+
+.home-container {
+    display: flex !important;
+    flex-direction: column !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/*-------HOME PAGE - HERO SECTION--------*/
+
+.home-hero{
+    display: flex;
+    flex-wrap: wrap;
+    height: 500px;
+    background-image:linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5) ),  url('/images/femaleconductor.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: 0 20%;
+}
+
+
+.home-hero h2{
+    display: flex;
+    align-items: center;
+    width: 500px;
+    color: white;
+    margin: 3rem;
+    padding-left: 6rem;
+    padding-top: 10rem;
+    font-size: 36px;
+    font-weight: 600;
+}
+
+.home-hero h5{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 700px;
+    color: white;
+    padding-bottom: 30rem;
+    padding-left: 20rem;
+    font-size: 20px;
+    font-weight: 300;
+
+}
+
+/*-------HOME PAGE - LETTER SECTION--------*/
+
+.home-letters{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 5rem;
+    background-color: #f5d37a;
+}
+
+
+.letter-one, .letter-two, .letter-three, .letter-four{
+    height: 36.75rem;
+    width: 25.75rem;
+    border: 4px solid #EEB522;
+}
+
+.letter-one h5, .letter-two h5, .letter-three h5, .letter-four h5{
+    position: relative;
+    top: 310px;
+    font-size: 18px;
+}
+
+.letter-one{
+    background-image: url('/images/banddirector.jpeg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: 25% 5%;
+    color: white;
+    text-align: center;
+    position: relative;
+    bottom: 70px;
+    box-shadow: 0px 3px 8px rgb(68, 68, 68);
+    margin: 0 10px;
+    border-radius: 5px;
+    margin-top: 2rem;
+}
+
+.letter-two{
+    background-image: url('/images/choral-conductor.webp');
+    background-size: 360px;
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+    position: relative;
+    bottom: 70px;
+    color: white;
+    text-align: center;
+    box-shadow: 0px 3px 8px rgb(68, 68, 68);
+    margin: 0 10px;
+    border-radius: 5px;
+    margin-top: 2rem;
+}
+
+.letter-three{
+    background-image: url('/images/femalechoir6.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: 85% 0;
+    position: relative;
+    bottom: 70px;
+    color: white;
+    text-align: center;
+    box-shadow: 0px 3px 8px rgb(68, 68, 68);
+    margin: 0 10px;
+    border-radius: 5px;
+    margin-top: 2rem;
+}
+
+.letter-four{
+    background-image: url('/images/theatredirector2.jpeg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position-x: center;
+    background-position-y: center;
+    position: relative;
+    bottom: 70px;
+    color: white;
+    text-align: center;
+    box-shadow: 0px 3px 8px rgb(68, 68, 68);
+    margin: 0 10px;
+    border-radius: 5px;
+    margin-top: 2rem;
+}
+
+/*-------HOME PAGE - ABOUT SECTION----------*/
+
+.about{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    background-color:  #f9e5af;
+    margin-left: 10rem;
+    margin-right: 10rem;
+    padding-top: 4rem;
+    padding-bottom: 5rem;
+}
+
+.about-logo{
+    display: flex;
+    padding-left: 3rem;
+    padding-right: 1rem;
+    width: 270px;
+    margin: auto;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.about-section{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    align-items: start;
+    padding-left: 5rem;
+    padding-right: 5rem;
+    max-width: 900px;
+}
+
+.about-title{
+    font-family: 'Poppins', sans-serif;
+    font-size: 35px;
+}
+
+.about-body{
+    font-family: 'Poppins', sans-serif;
+    font-size: 17px;
+    font-weight: 300;
+}
+
+.about-button button{
+    width: 14rem;
+    height: 5rem;
+    background-color: #f5d37a;
+    color: black;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: 'Poppins', sans-serif;
+    margin-top: 2rem;
+}
+
+/*-------HOME PAGE - SITES SECTION--------*/
+
+.home-sites{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    margin-top: 15rem;
+}
+
+#site {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    margin-left: 1rem;
+    margin-right: 1rem;
+    margin-top: 2rem;
+}
+
+.web-one, .web-two, .web-three{
+    height: 36.75rem;
+    width: 35.75rem;
+    border: 4px solid #f8f9fe;
+    color: black;
+    box-shadow: 0px 3px 8px rgb(68, 68, 68);
+    border-radius: 5px;
+}
+
+#site h5, #site h5, #site h5{
+    margin-top: 3rem;
+    font-weight: 600;
+    font-size: 16px;
+    color: black;
+}
+
+.web-one{
+    background-image: url('/images/accoladi-logo-yellow.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: 60% 25%;
+}
+
+.web-two{
+    background-image: url('/images/nsma-logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: 50% 5%;
+}
+
+.web-three{
+    background-image: url('/images/my-music-future-logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: 45% 50%;
+}
+
+/*-------HOME PAGE - CONNECT SECTION--------*/
+
+.connect{
+    display: flex;
+    flex-direction:row ;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: center;
+    background-color:  #f9e5af;
+    margin-top: 15rem;
+    margin-bottom: 15rem;
+    margin-left: 10rem;
+    margin-right: 10rem;
+    padding-right: 5rem;
+    padding-left: 5rem;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+}
+
+.connect-button button{
+    width: 14rem;
+    height: 5rem;
+    background-color: #f5d37a;
+    color: black;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: 'Poppins', sans-serif;
+}
+
+
+
+/*-------ABOUT PAGE--------*/
+
+.about-container {
+    display: flex !important;
+    flex-direction: column !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/*-------ABOUT PAGE - HERO SECTION--------*/
+
+.aboutus-hero{
+    height: 460px;
+    background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3) ),  url('/images/ChoirCollegeChoir.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: 0 49%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.aboutus-hero-title {
+    color: white;
+    font-size: 70px
+}
+
+/*-------ABOUT PAGE - MAIN SECTION--------*/
+
+.aboutus-section{
+    display: flex;
+    flex-direction: column;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f9e5af;
+    margin-top: 8rem;
+    margin-bottom: 15rem;
+    margin-left: 10rem;
+    margin-right: 10rem;
+    padding-left: 7rem;
+    padding-right: 7rem;
+    padding-top: 5rem;
+    padding-bottom: 7rem;
+}
+
+.aboutus-paragraph{
+    text-indent: 2rem;
+}
+
+
+
+/*----------CONTACT PAGE----------*/
+
+.contact-container {
+    display: flex !important;
+    flex-direction: column !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/*-------CONTACT PAGE - HERO SECTION--------*/
+
+.contact-hero{
+    height: 450px;
+    background-image:linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1) ),  url('/images/contact-img1.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: 0 40%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.contact-hero-title {
+    color: white;
+    font-size: 70px
+}
+
+/*-------CONTACT PAGE - CONTACT US SECTION--------*/
+
+.contact{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin-top: 7rem;
+    margin-bottom: 15rem;
+    padding-left: 15rem;
+    padding-right: 15rem;
+}
+
+.contact-form{
+    margin-top: 4rem;
+}
+
+/*-------CONTACT PAGE - MORE INFO SECTION--------*/
+
+.more-info{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    text-align: center;
+    background-color: #f9e5af;
+    padding: 5rem;
+}
+
+.social-media-icons{
+    display: flex;
+    justify-content: center;
+}
+
+.social-media-icons img{
+    height: 20px;
+    width: auto;
+}
+
+.social-media-icons li{
+    list-style: none;
+    margin-right: 1.5rem;
+}
+
+
+
+/*---------LETTERS PAGE---------*/
+
+.letters-container {
+    display: flex !important;
+    flex-direction: column !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/*-------LETTERS PAGE - HERO SECTION--------*/
+
+.letters-hero{
+    height: 450px;
+    background-image:linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3) ),  url('/images/62d5a88c9d0f8b836f6e61af_feature2.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: 0 67%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.letters-hero-title {
+    color: white;
+    font-size: 70px
+}
+
+/*-------LETTERS PAGE - MAIN SECTION--------*/
+
+.letter-type{
+    background-color: #f9e5af;
+    text-align: center;
+    margin: 10rem;
+    padding: 7rem;
+}
+
+.letter-type h2 {
+    color: black;
+    text-align: start;
+}
+
+.letters{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.letter{
+    background-color: #f5d37a;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    margin: 1rem;
+    max-width: 23rem;
+}
