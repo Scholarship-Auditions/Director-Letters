@@ -14,16 +14,10 @@
           <button type="submit" class="btn btn-danger">Delete</button>
         </form>
       <% } %>
-<div>
-  <iframe id="docViewer" src="/view-docx/<%= letter.letter_id %>"></iframe>
-</div>
-
-<script src="/js/viewer.min.js"></script>
-<script>
-  // Initialize Viewer.js for the document iframe
-  const docViewer = new Viewer(document.getElementById('docViewer'));
-</script>
-
+      <a href="/view-docx/<%= letter.letter_id %>" class="btn btn-secondary">Download</a>
+      <div>
+        <%- letter.content %>
+      </div>
     </div>
   </section>
 </main>

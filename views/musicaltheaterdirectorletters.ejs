@@ -30,7 +30,11 @@
                     <h5>Writer: <%= letter.writer_name %></h5>
                     <h5>For: <%= letter.recipient_name %></h5>
                     <h5>Category <%= letter.category_name %></h5>
-                    <a href="/letters/<%= letter.letter_id %>" class="btn btn-primary">View Index</a>
+                    <% if(currentUser){ %>
+                      <a href="/letters/<%= letter.letter_id %>" class="btn btn-primary">View Actions</a>
+                    <% } else { %>
+                      <a href="/view-docx/<%= letter.letter_id %>" class="btn btn-primary">Download</a>
+                    <% } %>
                     <!-- Add more details based on your letter schema -->
                 </div>
                 <% }); %>
