@@ -132,7 +132,7 @@ footer{
     display: flex;
     flex-wrap: wrap;
     height: 500px;
-    background-image:linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5) ),  url('/images/femaleconductor.png');
+    background-image:linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5) ),  url('./assets/femaleconductor.png');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: 0 20%;
@@ -189,7 +189,7 @@ footer{
 }
 
 .letter-one{
-    background-image: url('/images/banddirector.jpeg');
+    background-image: url('./assets/banddirector.jpeg');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: 25% 5%;
@@ -204,7 +204,7 @@ footer{
 }
 
 .letter-two{
-    background-image: url('/images/choral-conductor.webp');
+    background-image: url('./assets/choral-conductor.webp');
     background-size: 360px;
     background-repeat: no-repeat;
     background-position: 50% 50%;
@@ -219,7 +219,7 @@ footer{
 }
 
 .letter-three{
-    background-image: url('/images/femalechoir6.jpg');
+    background-image: url('./assets/femalechoir6.jpg');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: 85% 0;
@@ -234,7 +234,7 @@ footer{
 }
 
 .letter-four{
-    background-image: url('/images/theatredirector2.jpeg');
+    background-image: url('./assets/theatredirector2.jpeg');
     background-size: cover;
     background-repeat: no-repeat;
     background-position-x: center;
@@ -346,21 +346,21 @@ img {
 }
 
 .web-one{
-    background-image: url('/images/accoladi-logo-yellow.png');
+    background-image: url('./assets/accoladi-logo-yellow.png');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: 60% 25%;
 }
 
 .web-two{
-    background-image: url('/images/nsma-logo.png');
+    background-image: url('./assets/nsma-logo.png');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: 50% 5%;
 }
 
 .web-three{
-    background-image: url('/images/my-music-future-logo.png');
+    background-image: url('./assets/my-music-future-logo.png');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: 45% 50%;
