@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
+import { useAuth } from '../context/AuthContext';
 
 function LetterDetail() {
   const [letter, setLetter] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const fetchLetter = async () => {
@@ -38,8 +40,12 @@ function LetterDetail() {
     <div>
       <h1>{letter.title}</h1>
       <div dangerouslySetInnerHTML={{ __html: letter.content }} />
-      <Link to={`/letters/${id}/edit`}>Edit</Link>
-      <button onClick={handleDelete}>Delete</button>
+      {isAuthenticated && (
+        <>
+          <Link to={`/letters/${id}/edit`}>Edit</Link>
+          <button onClick={handleDelete}>Delete</button>
+        </>
+      )}
     </div>
   );
 }
