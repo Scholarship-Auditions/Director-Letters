@@ -142,6 +142,38 @@ app.get("/api/letters", async (req, res) => {
   }
 });
 
+app.get("/api/letters/director/:directorName", async (req, res) => {
+  try {
+    const { directorName } = req.params;
+    const searchQuery = req.query.search || "";
+    const categoryFilter = req.query.category || "";
+
+    const query = `
+      SELECT l.*, w.name AS writer_name, r.name AS recipient_name, c.name AS category_name
+      FROM letters l
+      INNER JOIN letterwriters w ON l.writer_id = w.writer_id
+      INNER JOIN letterrecipients r ON l.recipient_id = r.recipient_id
+      INNER JOIN lettercategories c ON l.category_id = c.category_id
+      WHERE w.name = $1
+      AND (l.title ILIKE $2 OR l.content::text ILIKE $2)
+      ${categoryFilter ? "AND c.category_id = $3" : ""}
+    `;
+
+    const searchParam = `%${searchQuery}%`;
+    const queryParams = [directorName, searchParam];
+
+    if (categoryFilter) {
+      queryParams.push(categoryFilter);
+    }
+
+    const { rows } = await pool.query(query, queryParams);
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching director letters:", error);
+    res.status(500).json({ message: "Error fetching director letters." });
+  }
+});
+
 app.get("/api/letters/:id", async (req, res) => {
   try {
     const { id } = req.params;

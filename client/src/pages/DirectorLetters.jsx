@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import api from '../api';
 import Letter from '../components/Letter';
 
-function Letters() {
+function DirectorLetters() {
   const [letters, setLetters] = useState([]);
+  const { directorName } = useParams();
 
   useEffect(() => {
     const fetchLetters = async () => {
       try {
-        const response = await api.get('/api/letters');
+        const response = await api.get(`/api/letters/director/${directorName}`);
         setLetters(response.data);
       } catch (error) {
-        console.error('Failed to fetch letters:', error);
+        console.error(`Failed to fetch letters for ${directorName}:`, error);
       }
     };
     fetchLetters();
-  }, []);
+  }, [directorName]);
 
   return (
     <div>
-      <h1>Letters</h1>
-      <Link to="/add-letter">Add New Letter</Link>
+      <h1>{directorName} Letters</h1>
       {letters.map((letter) => (
         <Letter key={letter.letter_id} letter={letter} />
       ))}
@@ -29,4 +29,4 @@ function Letters() {
   );
 }
 
-export default Letters;
+export default DirectorLetters;
