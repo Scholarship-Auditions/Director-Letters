@@ -1,41 +1,23 @@
-import React, { useState } from 'react';
-import api from '../api';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React from 'react';
 
-function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const { login } = useAuth();
-  const navigate = useNavigate();
+const Login = () => {
+    return (
+        <div className="container" style={{ marginTop: '10rem', marginBottom: '10rem' }}>
+            <h1>Admin Login</h1>
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await api.post('/api/auth/login', { username, password });
-      login(response.data.token);
-      navigate('/');
-    } catch (error) {
-      console.error('Login failed:', error);
-    }
-  };
-
-  return (
-    <div>
-      <h1>Login</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Username</label>
-          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} />
+            <form action="/login" method="POST">
+                <div className="form-group">
+                    <label htmlFor="username">Email</label>
+                    <input type="email" className="form-control" name="username" required />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="password">Password</label>
+                    <input type="password" className="form-control" name="password" required />
+                </div>
+                <button type="submit" className="btn btn-primary">Login</button>
+            </form>
         </div>
-        <div>
-          <label>Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        </div>
-        <button type="submit">Login</button>
-      </form>
-    </div>
-  );
-}
+    );
+};
 
 export default Login;
