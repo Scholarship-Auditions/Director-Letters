@@ -1,40 +1,35 @@
 import React from 'react';
-import { HashRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
 import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Letters from './pages/Letters';
-import AddLetter from './pages/AddLetter';
-import EditLetter from './pages/EditLetter';
-import LetterDetail from './pages/LetterDetail';
-import DirectorLetters from './pages/DirectorLetters';
 import About from './pages/About';
 import Contact from './pages/Contact';
-import Layout from './components/Layout';
-import { AuthProvider } from './context/AuthContext';
-import './home-styles.css';
+import Letters from './pages/Letters';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import './styles/home-styles.css';
 
 function App() {
-  return (
-    <AuthProvider>
-      <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/letters" element={<Letters />} />
-            <Route path="/letters/director/:directorName" element={<DirectorLetters />} />
-            <Route path="/letters/:id" element={<LetterDetail />} />
-            <Route path="/letters/:id/edit" element={<EditLetter />} />
-            <Route path="/add-letter" element={<AddLetter />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-          </Routes>
-        </Layout>
-      </Router>
-    </AuthProvider>
-  );
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<Layout />}>
+                    <Route index element={<Home />} />
+                    <Route path="home" element={<Home />} />
+                    <Route path="letters" element={<Letters title="Letters" />} />
+                    <Route path="band-director-letters" element={<Letters title="Band Director Letters" categoryFilter="1" />} />
+                    <Route path="choir-director-letters" element={<Letters title="Choir Director Letters" categoryFilter="2" />} />
+                    <Route path="orchestra-director-letters" element={<Letters title="Orchestra Director Letters" categoryFilter="3" />} />
+                    <Route path="musical-theater-director-letters" element={<Letters title="Musical Theater Director Letters" categoryFilter="4" />} />
+                    <Route path="aboutus" element={<About />} />
+                    <Route path="contact" element={<Contact />} />
+                    <Route path="login" element={<Login />} />
+                    <Route path="register" element={<Register />} />
+                    <Route path="*" element={<div style={{ padding: '10rem', textAlign: 'center' }}>Page Not Found</div>} />
+                </Route>
+            </Routes>
+        </BrowserRouter>
+    );
 }
 
 export default App;
