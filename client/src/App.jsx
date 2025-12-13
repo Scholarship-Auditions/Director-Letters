@@ -48,8 +48,6 @@ function App() {
           />
           <Route path="aboutus" element={<About />} />
           <Route path="contact" element={<Contact />} />
-          <Route path="add-letter" element={<AddLetter />} />
-          <Route path="admin" element={<AdminDashboard />} />
 
           {/* The Login page will now handle both Login and Register */}
           <Route path="login" element={<Login />} />
@@ -66,6 +64,9 @@ function App() {
             }
           />
         </Route>
+
+        <Route path="admin" element={<AdminDashboard />} />
+        <Route path="add-letter" element={<AddLetter />} />
       </Routes>
     </BrowserRouter>
   );

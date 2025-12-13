@@ -332,6 +332,36 @@ app.get("/api/options", async (req, res) => {
   }
 });
 
+app.get("/api/options/writers", async (req, res) => {
+  try {
+    const options = await fetchDropdownOptions();
+    res.json(options.letterwriters);
+  } catch (error) {
+    console.error("Error fetching writers:", error);
+    res.status(500).json({ message: "Error fetching writers." });
+  }
+});
+
+app.get("/api/options/recipients", async (req, res) => {
+  try {
+    const options = await fetchDropdownOptions();
+    res.json(options.letterrecipients);
+  } catch (error) {
+    console.error("Error fetching recipients:", error);
+    res.status(500).json({ message: "Error fetching recipients." });
+  }
+});
+
+app.get("/api/options/categories", async (req, res) => {
+  try {
+    const options = await fetchDropdownOptions();
+    res.json(options.lettercategories);
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({ message: "Error fetching categories." });
+  }
+});
+
 app.post("/api/options/writers", authenticateToken, async (req, res) => {
   try {
     const { name } = req.body;
