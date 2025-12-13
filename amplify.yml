@@ -5,13 +5,13 @@ backend:
       commands:
         - nvm install 20
         - nvm use 20
+        # Enter the client folder
         - cd client
-        # CHANGED: Use 'npm install' to fetch the Linux version of parcel/watcher
-        - npm install --no-save @parcel/watcher-linux-x64-glibc
-        # === DEBUG START (Colon removed) ===
-        - echo "DEBUG LISTING AMPLIFY FILES"
-        - ls -R amplify
-        # === DEBUG END ===
+        # 1. Install dependencies
+        - npm install
+        # 2. Force install the Linux watcher (Fixes the crash)
+        - npm install --no-save @parcel/watcher-linux-x64-glibc --legacy-peer-deps
+        # 3. Deploy
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
