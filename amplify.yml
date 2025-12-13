@@ -5,7 +5,6 @@ backend:
       commands:
         - nvm install 20
         - nvm use 20
-        # Go to client folder
         - cd client
         - npm install
         - npm install --no-save @parcel/watcher-linux-x64-glibc --legacy-peer-deps
@@ -16,14 +15,16 @@ frontend:
       commands:
         - nvm install 20
         - nvm use 20
-        # SAFETY CHECK: Only enter 'client' if we are at the root
+        # Ensure we are in the client folder
         - if [ -d "client" ]; then cd client; fi
         - npm install
+        # === THIS IS THE FIX ===
+        # Force install the Linux version of Rollup (Vite's dependency)
+        - npm install --no-save @rollup/rollup-linux-x64-gnu --legacy-peer-deps
     build:
       commands:
         - nvm install 20
         - nvm use 20
-        # SAFETY CHECK: Ensure we are in the right place
         - if [ -d "client" ]; then cd client; fi
         - npm run build
   artifacts:
