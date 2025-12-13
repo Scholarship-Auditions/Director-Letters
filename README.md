@@ -4,12 +4,13 @@ This is a web application for managing and viewing director's letters.
 
 ## Data storage overview
 
-- **Letters**: Uploaded `.docx` files are converted to HTML and stored in an S3 bucket managed by Amplify Storage (`letterBucket`). A signed download URL is returned by the API for each letter. The rendered HTML is also persisted in Postgres for searchability.
+- **Letters**: Uploaded `.docx` files are converted to HTML and stored in an S3 bucket managed by Amplify Storage (`letters`). A signed download URL is returned by the API for each letter. The rendered HTML is also persisted in Postgres for searchability.
 - **Dropdown data**: Writers, recipients, and categories continue to live in Postgres tables (`letterwriters`, `letterrecipients`, `lettercategories`).
 
 ## Amplify footprint
 
-- Amplify Gen 2 currently provisions **only** S3 storage for letters. The REST API continues to run in Express, so no Amplify API resource is required—frontend calls hit the existing `/api/...` endpoints directly.
+- The project is deployed with **AWS Amplify Gen 2**. Amplify provisions S3 storage for letters and hosts both the Express API and Vite frontend via the build defined in `amplify.yml`. No Elastic Beanstalk resources are used.
+- The REST API is still served by Express; the frontend calls the existing `/api/...` endpoints directly. Postgres can be hosted in Amazon RDS or another reachable Postgres instance, configured through environment variables in Amplify.
 
 ## Running the Project Locally
 
@@ -49,4 +50,4 @@ To run this project locally, follow these steps:
 
 ## Deploying to AWS
 
-For instructions on how to deploy this application to AWS, see the [deployment guide](DEPLOY.md).
+For instructions on how to deploy this application to AWS with Amplify, see the [deployment guide](DEPLOY.md).
