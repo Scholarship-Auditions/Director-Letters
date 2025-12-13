@@ -1,291 +1,79 @@
-# Deploying to AWS with Elastic Beanstalk
+# Deploying to AWS with Amplify Gen 2
 
-This guide will walk you through the process of deploying this application to AWS using Elastic Beanstalk and setting up a PostgreSQL database with Amazon RDS.
+This guide shows how to host the app (frontend + Express API) and provision S3 storage using **AWS Amplify Gen 2**. No Elastic Beanstalk is required. If you want Postgres in AWS, create an external Amazon RDS instance and point the app to it via environment variables.
 
 ---
 
 ## Prerequisites
 
-*   An AWS account. If you don't have one, you can create one [here](https://aws.amazon.com/free/).
-*   The AWS CLI installed and configured on your local machine. You can find instructions [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html).
-*   The Elastic Beanstalk CLI installed. You can find instructions [here](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html).
+- An AWS account with Amplify enabled.
+- Amplify CLI v12+ installed locally (`npm i -g @aws-amplify/cli`).
+- Node.js 20.x installed locally (matches the build image in `amplify.yml`).
+- GitHub repository connected or accessible so Amplify Hosting can pull your code.
+- (Optional) An Amazon RDS PostgreSQL instance if you want AWS-managed Postgres.
 
-## Step 1: Create a PostgreSQL Database with Amazon RDS
+## Step 1: Clone and install locally
 
-1.  **Navigate to the RDS Dashboard:**
-    *   Open the AWS Management Console and search for "RDS."
-    *   Click on "Create database."
+```bash
+git clone <repository-url>
+cd Director-Letters
+npm install
+```
 
-2.  **Configure the Database:**
-    *   Choose "Standard create" and select "PostgreSQL."
-    *   Choose a template. The "Free tier" is a good option for development and testing.
-    *   Under "Settings," create a master username and password. **Remember these credentials.**
-    *   Under "Connectivity," make sure "Public access" is set to "Yes." This will allow your Elastic Beanstalk application to connect to the database.
-    *   Click "Create database."
+## Step 2: Configure Amplify locally (one time)
 
-3.  **Retrieve Database Credentials:**
-    *   Once the database is created, click on its name to view the details.
-    *   Under the "Connectivity & security" tab, you will find the **endpoint** and **port**. You will need these, along with the username and password you created, to configure your application.
+Amplify Gen 2 uses code-defined backend resources (see `amplify/backend.ts`). The repo already defines an S3 bucket named `letters` with authenticated write access and guest read access.
 
-## Step 2: Prepare the Application for Deployment
+```bash
+# If you have not initialized Amplify in this repo on your machine
+amplify pull --appId <your-app-id> --envName <env>
+# or create a new environment
+amplify init
+```
 
-1.  **Initialize Elastic Beanstalk:**
-    *   In your terminal, navigate to the root directory of the project.
-    *   Run the following command:
-        ```bash
-        eb init -p "Node.js" --region <your-aws-region> directors-letters
-        ```
-        Replace `<your-aws-region>` with your desired AWS region (e.g., `us-east-2`).
+## Step 3: Provision backend storage
 
-2.  **Create an Environment:**
-    *   Run the following command to create an environment and deploy the application:
-        ```bash
-        eb create directors-letters-env
-        ```
+Push the defined storage resource to your Amplify environment:
 
-## Step 3: Configure Environment Variables
+```bash
+npx ampx backend push
+```
 
-1.  **Navigate to the Elastic Beanstalk Dashboard:**
-    *   In the AWS Management Console, search for "Elastic Beanstalk."
-    *   Click on your environment (`directors-letters-env`).
+This creates the S3 bucket and policies specified in `amplify/storage/resource.ts`.
 
-2.  **Set Environment Properties:**
-    *   In the left-hand menu, click on "Configuration."
-    *   Under "Software," click "Edit."
-    *   Scroll down to "Environment properties" and add the following variables:
-        *   `DB_HOST`: The endpoint of your RDS database.
-        *   `DB_USER`: The master username for your database.
-        *   `DB_PASSWORD`: The password you created for the database.
-        *   `DB_DATABASE`: The name of the database (the default is `postgres`).
-    *   Click "Apply."
+## Step 4: Configure environment variables
 
-## Step 4: Access Your Application
+In the Amplify console, open your app > **Backend environments** > **Environment variables** and set:
 
-Once the environment has been updated, you can access your application by clicking the URL at the top of the Elastic Beanstalk dashboard.
+- `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_DATABASE` – point to your Postgres instance (Amazon RDS or another reachable Postgres server).
+- Any additional secrets your Express server expects.
 
-## Additional Notes
+These variables are injected during the build defined in `amplify.yml`.
 
-*   **Database Schema:** The database tables are created automatically by the migration system in the default `public` schema. All application queries reference these tables directly without a schema prefix.
-*   **Troubleshooting:** If you encounter issues, check the logs in the Elastic Beanstalk dashboard for more information.
-*   **Security:** For a production environment, it is recommended to configure a VPC and security groups to restrict database access to only your Elastic Beanstalk instances. The instructions above with public access are for simplicity.
+## Step 5: Connect the repository and deploy
 
-## Step 5: Automate Deployment with GitHub Actions
+1. In the Amplify console, choose **New app** > **Host web app** and connect your GitHub repository.
+2. Select the branch to deploy (e.g., `work` or `main`).
+3. Amplify will use `amplify.yml` to build both backend (`ampx pipeline-deploy`) and frontend assets. The Express server is built alongside the Vite frontend.
+4. After the first deployment, Amplify provides a default domain. You can add custom domains under **Domain management**.
 
-To automatically deploy your application to Elastic Beanstalk whenever you push changes to the `main` branch, you need to add your AWS credentials as secrets to your GitHub repository.
+## Step 6: Ongoing updates
 
-1.  **Create an IAM User in AWS:**
-    *   It's a best practice to create a dedicated IAM user with programmatic access and the minimum required permissions to deploy to Elastic Beanstalk. Grant this user the `AWSElasticBeanstalkFullAccess` policy.
-    *   When you create the user, you will get an **Access Key ID** and a **Secret Access Key**. **Save these securely.**
+- Push commits to the connected branch; Amplify rebuilds and redeploys automatically.
+- Backend changes (e.g., storage rules) are codified in the `amplify/` folder and deployed via the same pipeline.
+- Use the S3 bucket for storing letter HTML uploads; dropdown metadata remains in Postgres.
 
-2.  **Add Secrets to Your GitHub Repository:**
-    *   In your GitHub repository, go to "Settings" > "Secrets and variables" > "Actions."
-    *   Click "New repository secret."
-    *   Create two new secrets:
-        *   `AWS_ACCESS_KEY_ID`: Your AWS Access Key ID.
-        *   `AWS_SECRET_ACCESS_KEY`: Your AWS Secret Access Key.
+## Optional: Creating Amazon RDS PostgreSQL
 
-Once you have added these secrets, the GitHub Actions workflow will be able to securely connect to your AWS account and deploy your application.
+If you need AWS-managed Postgres (instead of a self-hosted database):
+
+1. Create a PostgreSQL instance in Amazon RDS.
+2. Ensure the security group allows inbound traffic from Amplify build/hosting IPs or place both in a VPC with proper rules.
+3. Update the Amplify environment variables with the RDS endpoint, port, user, password, and database name.
+4. Run database migrations from your local machine or a CI job targeting the RDS instance (`npm run migrate`).
 
 ---
 
-## Connecting Multiple GoDaddy Domains
+## DNS and domains
 
-If you own multiple domains (e.g., `directorsletters.com` and `directorletters.com`) and want them both to lead to your application, the best practice is to choose one as your **primary domain** and have the other permanently redirect to it. This is crucial for good SEO and a consistent user experience.
-
-This guide will walk you through setting `directorsletters.com` as the primary domain and making `directorletters.com` redirect to it.
-
-### Part 1: Configure the Primary Domain (`directorsletters.com`)
-
-Follow these steps to point your main domain to your Elastic Beanstalk application.
-
-#### Step 1.1: Create a Hosted Zone in AWS Route 53
-
-1.  In the AWS Console, go to **Route 53**.
-2.  Click **Create hosted zone**.
-3.  Enter your primary domain name (e.g., `directorsletters.com`).
-4.  Select **Public hosted zone**.
-5.  Click **Create hosted zone**.
-
-#### Step 1.2: Update Nameservers in GoDaddy
-
-1.  After creating the hosted zone, Route 53 will give you four **NS (Name Server)** records. Copy these server names.
-2.  Log in to your **GoDaddy account**.
-3.  Go to your domain list and select your primary domain.
-4.  Find the DNS management section and click "Change" under Nameservers.
-5.  Select "I'll use my own nameservers" and paste the four server names you copied from Route 53.
-6.  Save your changes. **Note:** It can take up to 48 hours for these changes to fully propagate across the internet.
-
-#### Step 1.3: Get an SSL/TLS Certificate
-
-1.  In the AWS Console, go to **AWS Certificate Manager (ACM)**.
-2.  Click **Request a certificate** and choose **Request a public certificate**.
-3.  For the domain name, add both your root domain and a wildcard for subdomains:
-    *   `directorsletters.com`
-    *   `*.directorsletters.com`
-4.  Choose **DNS validation**.
-5.  Click **Request**. ACM will now ask you to create CNAME records in Route 53 to prove you own the domain. Since Route 53 is now managing your DNS, you can simply click the "Create records in Route 53" button, and ACM will do it for you.
-6.  Wait for the certificate status to change from "Pending validation" to **"Issued"**.
-
-#### Step 1.4: Configure Elastic Beanstalk Load Balancer
-
-1.  Go to your **Elastic Beanstalk** environment.
-2.  In the left menu, go to **Configuration**.
-3.  Find the **Load balancer** category and click **Edit**.
-4.  Click **Add listener**.
-5.  Set the **Port** to `443` and the **Protocol** to `HTTPS`.
-6.  Select the SSL certificate you just created from the dropdown.
-7.  Click **Add**, then **Apply** at the bottom of the page. This will update your environment.
-
-#### Step 1.5: Point Your Domain to Elastic Beanstalk
-
-1.  Go back to the **Route 53** console and select the hosted zone for your primary domain.
-2.  Click **Create record**.
-3.  Leave the record name blank (for the root domain).
-4.  Select **Record type: A**.
-5.  Enable the **Alias** toggle.
-6.  For the endpoint, choose **Alias to Elastic Beanstalk environment** and select your environment (`directors-letters-env`).
-7.  Click **Create record**.
-8.  **Repeat these steps** to create another `A` record, but this time set the record name to `www`. This will ensure `www.directorsletters.com` also works.
-
-Your primary domain is now configured!
-
-### Part 2: Configure the Secondary Domain (`directorletters.com`) for Redirection
-
-Follow these steps to make your second domain automatically redirect to your primary domain.
-
-#### Step 2.1: Create an S3 Bucket for Redirection
-
-1.  In the AWS Console, go to **S3**.
-2.  Click **Create bucket**.
-3.  The **Bucket name** must be the **exact name** of your secondary domain (e.g., `directorletters.com`).
-4.  Choose the AWS Region for your bucket.
-5.  **Uncheck "Block all public access"** and acknowledge that you are making the bucket public.
-6.  Click **Create bucket**.
-
-#### Step 2.2: Configure Bucket for Website Redirection
-
-1.  Go into the S3 bucket you just created and click the **Properties** tab.
-2.  Scroll to the bottom and find **Static website hosting**. Click **Edit**.
-3.  Enable static website hosting.
-4.  Select **Redirect requests for an object**.
-5.  For the **Host name**, enter the full URL of your primary domain (e.g., `www.directorsletters.com`).
-6.  For the **Protocol**, select `https`.
-7.  Click **Save changes**.
-
-#### Step 2.3: Set Up Route 53 and GoDaddy for the Secondary Domain
-
-1.  Follow the same steps as **1.1 and 1.2** for your secondary domain:
-    *   Create a **new hosted zone** in Route 53 for `directorletters.com`.
-    *   Copy the four new nameservers.
-    *   Update the nameservers in your GoDaddy account for this second domain.
-
-#### Step 2.4: Point the Secondary Domain to the S3 Bucket
-
-1.  Go to the Route 53 hosted zone for your **secondary domain**.
-2.  Click **Create record**.
-3.  Leave the record name blank.
-4.  Select **Record type: A**.
-5.  Enable the **Alias** toggle.
-6.  For the endpoint, choose **Alias to S3 website endpoint** and select the S3 bucket you created for redirection.
-7.  Click **Create record**.
-8.  **Repeat** for the `www` subdomain, also pointing it to the same S3 bucket.
-
-After these steps are complete and the DNS changes have propagated, anyone visiting your secondary domain will be automatically redirected to your primary domain.
-
----
-
-## Deploying from the AWS Console (Manual)
-
-If you prefer to deploy the application manually from the AWS Management Console instead of using the CLI or GitHub Actions, follow these steps.
-
-### Step 1: Package Your Application
-
-1.  On your local machine, select all the files and folders in the project's root directory **except for the `.git` folder and the `.github` folder.**
-2.  Compress the selected files into a single `.zip` file. You can name it `directors-letters-deploy.zip`.
-
-### Step 2: Create an Elastic Beanstalk Environment
-
-1.  **Navigate to Elastic Beanstalk:**
-    *   Open the AWS Management Console and search for "Elastic Beanstalk."
-    *   Click on "Create Application."
-
-2.  **Configure Application:**
-    *   **Application name:** `directors-letters`
-    *   Add any desired application tags.
-
-3.  **Configure Environment:**
-    *   **Environment name:** `directors-letters-env` (or another name of your choice).
-    *   **Domain:** A unique domain will be auto-generated for you.
-    *   **Platform:** Choose **Node.js**.
-    *   **Platform branch and version:** You can select the latest recommended versions. Elastic Beanstalk will respect the `engines` setting in your `package.json`.
-
-4.  **Upload Your Code:**
-    *   Under "Application code," select "Upload your code."
-    *   Click "Upload" and select the `.zip` file you created in Step 1.
-
-5.  **Create Application:**
-    *   Click "Create application." AWS will now provision the necessary resources and deploy your code. This process can take several minutes.
-
-### Step 3: Configure Environment Variables
-
-1.  **Navigate to Configuration:**
-    *   Once your environment is running, go to the environment's page in the Elastic Beanstalk console.
-    *   In the left-hand menu, click on "Configuration."
-
-2.  **Edit Software Configuration:**
-    *   Find the "Software" category and click "Edit."
-
-3.  **Set Environment Properties:**
-    *   Scroll down to the "Environment properties" section.
-    *   Add the following variables, using the credentials from the RDS database you set up previously:
-        *   `DB_HOST`: The endpoint of your RDS database.
-        *   `DB_USER`: The master username for your database.
-        *   `DB_PASSWORD`: The password you created for the database.
-        *   `DB_DATABASE`: The name of the database (e.g., `postgres`).
-    *   Click "Apply." This will trigger an environment update.
-
-### Step 4: Access Your Application
-
-Once the environment update is complete, you can access your live application by clicking the URL at the top of the Elastic Beanstalk dashboard. Remember that you will still need to set up the database schema manually as mentioned in the "Additional Notes" section.
-
----
-
-## Troubleshooting: 504 Gateway Timeout / ETIMEDOUT Error
-
-If your application fails to load and you see a `504 Gateway Timeout` error, or if your logs show `Error: connect ETIMEDOUT`, it almost always means your Elastic Beanstalk application cannot connect to your RDS database due to a security group misconfiguration.
-
-Follow these steps to fix it:
-
-### Step 1: Find your Elastic Beanstalk Security Group
-
-1.  Navigate to the **EC2** service in the AWS Console.
-2.  In the left menu, under "Network & Security," click **Security Groups**.
-3.  Use the search bar to find the security group for your Elastic Beanstalk environment. It will usually have a name like `awseb-e-naddepcrbg-stack-AWSEBSecurityGroup-...`.
-4.  Copy the **Group ID** (it will look like `sg-0123456789abcdef0`).
-
-### Step 2: Add an Inbound Rule to your Database Security Group
-
-1.  Navigate to the **RDS** service in the AWS Console.
-2.  In the left menu, click **Databases** and select your database.
-3.  Go to the **Connectivity & security** tab.
-4.  Under "VPC security groups," click on the active security group. This will take you back to the EC2 security group console.
-5.  With the database security group selected, click the **Inbound rules** tab at the bottom, then click **Edit inbound rules**.
-6.  Click **Add rule**.
-7.  For **Type**, select **PostgreSQL** (this will automatically set the port to 5432).
-8.  For **Source**, select **Custom** and paste the **Group ID** of your Elastic Beanstalk security group that you copied in Step 1.
-9.  Click **Save rules**.
-
-This change will take effect almost immediately. Your application should now be able to connect to the database, and the timeout errors will be resolved. You may need to restart the application environment from the Elastic Beanstalk console for the changes to apply.
-
-### Connecting from a Local Client (pgAdmin)
-
-If you are getting a "connection timeout expired" error when trying to connect to the database from a local client like pgAdmin, you must also grant your computer access.
-
-1.  Follow steps 1-5 in the section above to navigate to the **inbound rules** for your database's security group.
-2.  Click **Add rule**.
-3.  For **Type**, select **PostgreSQL**.
-4.  For **Source**, select **My IP**. AWS will automatically detect and fill in your computer's public IP address.
-5.  Optionally, add a **Description** like "Home IP for pgAdmin" to remember why you added this rule.
-6.  Click **Save rules**.
-
-You should now be able to connect to the database from your local machine.
+Manage custom domains in Amplify **Domain management**. Route 53 and ACM handle DNS and TLS when you connect domains through Amplify; no Elastic Beanstalk steps are needed.

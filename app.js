@@ -13,14 +13,19 @@ const { stringify } = require("querystring");
 const multer = require("multer");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const { PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 require("dotenv").config();
 
 const app = express();
 const pool = require("./db");
 const fs = require("fs");
 const mammoth = require("mammoth");
+const s3Client = require("./s3Client");
 
 const upload = multer({ dest: "uploads/" }).single("file");
+const letterBucket =
+  process.env.LETTER_BUCKET_NAME || process.env.STORAGE_LETTERS_BUCKETNAME;
 
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
@@ -99,6 +104,10 @@ app.post("/api/auth/login", async (req, res) => {
 
 
 function authenticateToken(req, res, next) {
+  if (process.env.REQUIRE_AUTH !== "true") {
+    return next();
+  }
+
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -135,7 +144,13 @@ app.get("/api/letters", async (req, res) => {
     }
 
     const { rows } = await pool.query(query, queryParams);
-    res.json(rows);
+    const rowsWithUrls = await Promise.all(
+      rows.map(async (row) => ({
+        ...row,
+        s3_url: await buildSignedUrl(row.s3_key),
+      }))
+    );
+    res.json(rowsWithUrls);
   } catch (error) {
     console.error("Error fetching letters:", error);
     res.status(500).json({ message: "Error fetching letters." });
@@ -167,7 +182,13 @@ app.get("/api/letters/director/:directorName", async (req, res) => {
     }
 
     const { rows } = await pool.query(query, queryParams);
-    res.json(rows);
+    const rowsWithUrls = await Promise.all(
+      rows.map(async (row) => ({
+        ...row,
+        s3_url: await buildSignedUrl(row.s3_key),
+      }))
+    );
+    res.json(rowsWithUrls);
   } catch (error) {
     console.error("Error fetching director letters:", error);
     res.status(500).json({ message: "Error fetching director letters." });
@@ -181,7 +202,8 @@ app.get("/api/letters/:id", async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ message: "Letter not found." });
     }
-    res.json(rows[0]);
+    const signedUrl = await buildSignedUrl(rows[0].s3_key);
+    res.json({ ...rows[0], s3_url: signedUrl });
   } catch (error) {
     console.error("Error fetching letter:", error);
     res.status(500).json({ message: "Error fetching letter." });
@@ -198,11 +220,18 @@ app.post("/api/letters", authenticateToken, upload, async (req, res) => {
         const result = await mammoth.convertToHtml({ buffer: fileBuffer });
         const htmlContent = result.value;
 
-        const query = "INSERT INTO letters (title, content, writer_id, recipient_id, category_id) VALUES ($1, $2, $3, $4, $5) RETURNING *";
-        const values = [title, htmlContent, writer, recipient, category];
+        const timestamp = Date.now();
+        const sanitizedTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        const s3Key = `letters/${sanitizedTitle || "letter"}-${timestamp}.html`;
+
+        await uploadHtmlToS3(s3Key, htmlContent);
+
+        const query = "INSERT INTO letters (title, content, writer_id, recipient_id, category_id, s3_key, s3_bucket) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *";
+        const values = [title, htmlContent, writer, recipient, category, s3Key, letterBucket];
 
         const { rows } = await pool.query(query, values);
-        res.status(201).json(rows[0]);
+        const signedUrl = await buildSignedUrl(s3Key);
+        res.status(201).json({ ...rows[0], s3_url: signedUrl });
     } catch (error) {
         console.error("Error creating letter:", error);
         res.status(500).json({ message: "Error creating letter." });
@@ -242,28 +271,196 @@ app.delete("/api/letters/:id", authenticateToken, async (req, res) => {
     }
 });
 
-app.get("/api/form-data/add-letter", authenticateToken, async (req, res) => {
-    try {
-        const writerQuery = "SELECT * FROM letterwriters";
-        const recipientQuery = "SELECT * FROM letterrecipients";
-        const categoryQuery = "SELECT * FROM lettercategories";
+const fetchDropdownOptions = async () => {
+  const writerQuery = "SELECT * FROM letterwriters ORDER BY name";
+  const recipientQuery = "SELECT * FROM letterrecipients ORDER BY name";
+  const categoryQuery = "SELECT * FROM lettercategories ORDER BY name";
 
-        const [writerResult, recipientResult, categoryResult] = await Promise.all([
-            pool.query(writerQuery),
-            pool.query(recipientQuery),
-            pool.query(categoryQuery),
-        ]);
+  const [writerResult, recipientResult, categoryResult] = await Promise.all([
+    pool.query(writerQuery),
+    pool.query(recipientQuery),
+    pool.query(categoryQuery),
+  ]);
 
-        res.json({
-            letterwriters: writerResult.rows,
-            letterrecipients: recipientResult.rows,
-            lettercategories: categoryResult.rows,
-        });
-    } catch (error) {
-        console.error("Error fetching form data:", error);
-        res.status(500).json({ message: "Error fetching form data." });
-    }
+  return {
+    letterwriters: writerResult.rows,
+    letterrecipients: recipientResult.rows,
+    lettercategories: categoryResult.rows,
+  };
+};
+
+const uploadHtmlToS3 = async (key, htmlContent) => {
+  if (!letterBucket) {
+    throw new Error("LETTER_BUCKET_NAME/STORAGE_LETTERS_BUCKETNAME is not set");
+  }
+
+  const putCommand = new PutObjectCommand({
+    Bucket: letterBucket,
+    Key: key,
+    Body: htmlContent,
+    ContentType: "text/html",
+  });
+
+  await s3Client.send(putCommand);
+  return key;
+};
+
+const buildSignedUrl = async (key) => {
+  if (!key || !letterBucket) return null;
+
+  const getCommand = new GetObjectCommand({ Bucket: letterBucket, Key: key });
+  return getSignedUrl(s3Client, getCommand, { expiresIn: 60 * 60 });
+};
+
+app.get("/api/form-data/add-letter", async (req, res) => {
+  try {
+    const options = await fetchDropdownOptions();
+    res.json(options);
+  } catch (error) {
+    console.error("Error fetching form data:", error);
+    res.status(500).json({ message: "Error fetching form data." });
+  }
 });
+
+app.get("/api/options", async (req, res) => {
+  try {
+    const options = await fetchDropdownOptions();
+    res.json(options);
+  } catch (error) {
+    console.error("Error fetching options:", error);
+    res.status(500).json({ message: "Error fetching options." });
+  }
+});
+
+app.post("/api/options/writers", authenticateToken, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: "Writer name is required." });
+    }
+
+    const insertQuery =
+      "INSERT INTO letterwriters (name) VALUES ($1) RETURNING writer_id, name";
+    const { rows } = await pool.query(insertQuery, [name]);
+    res.status(201).json(rows[0]);
+  } catch (error) {
+    console.error("Error creating writer:", error);
+    res.status(500).json({ message: "Error creating writer." });
+  }
+});
+
+app.put("/api/options/writers/:id", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: "Writer name is required." });
+    }
+
+    const updateQuery =
+      "UPDATE letterwriters SET name = $1 WHERE writer_id = $2 RETURNING writer_id, name";
+    const { rows } = await pool.query(updateQuery, [name, id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Writer not found." });
+    }
+
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error updating writer:", error);
+    res.status(500).json({ message: "Error updating writer." });
+  }
+});
+
+app.post("/api/options/recipients", authenticateToken, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: "Recipient name is required." });
+    }
+
+    const insertQuery =
+      "INSERT INTO letterrecipients (name) VALUES ($1) RETURNING recipient_id, name";
+    const { rows } = await pool.query(insertQuery, [name]);
+    res.status(201).json(rows[0]);
+  } catch (error) {
+    console.error("Error creating recipient:", error);
+    res.status(500).json({ message: "Error creating recipient." });
+  }
+});
+
+app.put(
+  "/api/options/recipients/:id",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ message: "Recipient name is required." });
+      }
+
+      const updateQuery =
+        "UPDATE letterrecipients SET name = $1 WHERE recipient_id = $2 RETURNING recipient_id, name";
+      const { rows } = await pool.query(updateQuery, [name, id]);
+
+      if (rows.length === 0) {
+        return res.status(404).json({ message: "Recipient not found." });
+      }
+
+      res.json(rows[0]);
+    } catch (error) {
+      console.error("Error updating recipient:", error);
+      res.status(500).json({ message: "Error updating recipient." });
+    }
+  }
+);
+
+app.post("/api/options/categories", authenticateToken, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: "Category name is required." });
+    }
+
+    const insertQuery =
+      "INSERT INTO lettercategories (name) VALUES ($1) RETURNING category_id, name";
+    const { rows } = await pool.query(insertQuery, [name]);
+    res.status(201).json(rows[0]);
+  } catch (error) {
+    console.error("Error creating category:", error);
+    res.status(500).json({ message: "Error creating category." });
+  }
+});
+
+app.put(
+  "/api/options/categories/:id",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ message: "Category name is required." });
+      }
+
+      const updateQuery =
+        "UPDATE lettercategories SET name = $1 WHERE category_id = $2 RETURNING category_id, name";
+      const { rows } = await pool.query(updateQuery, [name, id]);
+
+      if (rows.length === 0) {
+        return res.status(404).json({ message: "Category not found." });
+      }
+
+      res.json(rows[0]);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      res.status(500).json({ message: "Error updating category." });
+    }
+  }
+);
 
 
 ///sql connection
