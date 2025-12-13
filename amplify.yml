@@ -11,9 +11,9 @@ applications:
       phases:
         build:
           commands:
+            - npm ci
             - npm run build
       artifacts:
-        # If using Create React App, change 'dist' to 'build'
         baseDirectory: dist
         files:
           - "**/*"
