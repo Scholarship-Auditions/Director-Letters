@@ -1,30 +1,26 @@
 version: 1
-backend:
-  phases:
-    build:
-      commands:
-        # Go into the client folder where package.json and amplify/ exist
-        - cd client
-        - npm ci
-        # Deploy the backend (Auth)
-        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
-frontend:
-  phases:
-    preBuild:
-      commands:
-        # Go into the client folder
-        - cd client
-        - npm ci
-    build:
-      commands:
-        # Go into the client folder and build
-        - cd client
-        - npm run build
-  artifacts:
-    # Point to the dist folder inside client
-    baseDirectory: client/dist
-    files:
-      - "**/*"
-  cache:
-    paths:
-      - client/node_modules/**/*
+applications:
+  - appRoot: .
+    backend:
+      phases:
+        build:
+          commands:
+            # Navigate to client folder explicitly
+            - cd client && npm ci
+            - cd client && npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - cd client && npm ci
+        build:
+          commands:
+            - cd client && npm run build
+      artifacts:
+        # Adjusted path since we are running from root
+        baseDirectory: client/dist
+        files:
+          - "**/*"
+      cache:
+        paths:
+          - client/node_modules/**/*
