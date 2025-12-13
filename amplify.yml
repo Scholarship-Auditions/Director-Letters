@@ -1,19 +1,21 @@
 version: 1
 applications:
-  # Build and deploy the Vite React app that lives in the monorepo at client/
-  - appRoot: client
+  # Amplify UI was configured with monorepo root set to "client/src", so the appRoot
+  # must match that path even though the package.json lives in the parent "client".
+  # Commands use "--prefix .." to run from the actual project root.
+  - appRoot: client/src
     frontend:
       phases:
         preBuild:
           commands:
-            - npm ci
+            - npm ci --prefix ..
         build:
           commands:
-            - npm run build
+            - npm run build --prefix ..
       artifacts:
-        baseDirectory: dist
+        baseDirectory: ../dist
         files:
           - '**/*'
       cache:
         paths:
-          - node_modules/**/*
+          - ../node_modules/**/*
