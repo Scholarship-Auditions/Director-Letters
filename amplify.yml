@@ -5,13 +5,10 @@ backend:
       commands:
         - nvm install 20
         - nvm use 20
-        # Enter the client folder
+        # Go to client folder
         - cd client
-        # 1. Install dependencies
         - npm install
-        # 2. Force install the Linux watcher (Fixes the crash)
         - npm install --no-save @parcel/watcher-linux-x64-glibc --legacy-peer-deps
-        # 3. Deploy
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
@@ -19,13 +16,15 @@ frontend:
       commands:
         - nvm install 20
         - nvm use 20
-        - cd client
+        # SAFETY CHECK: Only enter 'client' if we are at the root
+        - if [ -d "client" ]; then cd client; fi
         - npm install
     build:
       commands:
         - nvm install 20
         - nvm use 20
-        - cd client
+        # SAFETY CHECK: Ensure we are in the right place
+        - if [ -d "client" ]; then cd client; fi
         - npm run build
   artifacts:
     baseDirectory: client/dist
