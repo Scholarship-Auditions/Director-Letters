@@ -1,9 +1,10 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.NODE_ENV === 'production'
-    ? 'http://directors-letters-env.eba-2b62phwu.us-east-2.elasticbeanstalk.com'
-    : 'http://localhost:3100',
+  baseURL: import.meta.env.VITE_API_BASE_URL
+    || (import.meta.env.MODE === 'production'
+      ? 'https://directors-letters-env.eba-2b62phwu.us-east-2.elasticbeanstalk.com'
+      : 'http://localhost:3100'),
 });
 
 // Add a request interceptor to include the token in headers
