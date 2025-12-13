@@ -1,22 +1,13 @@
 version: 1
-applications:
-  - appRoot: client
-    backend:
-      phases:
-        build:
-          commands:
-            - npm ci
-            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
-    frontend:
-      phases:
-        build:
-          commands:
-            - npm run build
-      artifacts:
-        # If using Create React App, change 'dist' to 'build'
-        baseDirectory: dist
-        files:
-          - "**/*"
-      cache:
-        paths:
-          - node_modules/**/*
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - ls -R # This prints all files so you can see the real structure in the logs
+    build:
+      commands:
+        - echo "Debugging structure"
+  artifacts:
+    baseDirectory: dist
+    files:
+      - "**/*"
