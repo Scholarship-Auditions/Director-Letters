@@ -8,7 +8,7 @@ const Login = () => {
     <div style={{ display: "flex", justifyContent: "center", padding: "2rem" }}>
       <Authenticator>
         {/* We removed { signOut, user } because we don't need them for the redirect */}
-        {() => <Navigate to="/home" replace />}
+        {() => <Navigate to="/admin" replace />}
       </Authenticator>
     </div>
   );
