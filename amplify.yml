@@ -3,6 +3,8 @@ backend:
   phases:
     build:
       commands:
+        - nvm install 20
+        - nvm use 20
         - cd client
         # CHANGED: Use 'npm install' to fetch the Linux version of parcel/watcher
         - npm install
@@ -11,10 +13,14 @@ frontend:
   phases:
     preBuild:
       commands:
+        - nvm install 20
+        - nvm use 20
         - cd client
         - npm install
     build:
       commands:
+        - nvm install 20
+        - nvm use 20
         - cd client
         - npm run build
   artifacts:
