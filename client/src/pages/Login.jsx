@@ -1,23 +1,17 @@
-import React from 'react';
+import React from "react";
+import { Authenticator } from "@aws-amplify/ui-react";
+import "@aws-amplify/ui-react/styles.css";
+import { Navigate } from "react-router-dom";
 
 const Login = () => {
-    return (
-        <div className="container" style={{ marginTop: '10rem', marginBottom: '10rem' }}>
-            <h1>Admin Login</h1>
-
-            <form action="/login" method="POST">
-                <div className="form-group">
-                    <label htmlFor="username">Email</label>
-                    <input type="email" className="form-control" name="username" required />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="password">Password</label>
-                    <input type="password" className="form-control" name="password" required />
-                </div>
-                <button type="submit" className="btn btn-primary">Login</button>
-            </form>
-        </div>
-    );
+  return (
+    <div style={{ display: "flex", justifyContent: "center", padding: "2rem" }}>
+      <Authenticator>
+        {/* We removed { signOut, user } because we don't need them for the redirect */}
+        {() => <Navigate to="/home" replace />}
+      </Authenticator>
+    </div>
+  );
 };
 
 export default Login;
