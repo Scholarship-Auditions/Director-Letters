@@ -1,16 +1,21 @@
 import { generateClient } from "aws-amplify/data";
 import { getUrl, uploadData } from "aws-amplify/storage";
 
-// Use the identity pool auth mode by default so unauthenticated visitors can
-// read public models (e.g., dropdown options) without hitting "Not Authorized"
-// errors. Authenticated users continue to work for protected mutations.
-export const dataClient = generateClient({ authMode: "identityPool" });
+// Default to API key auth for public reads. We explicitly opt into the Cognito
+// user pool auth mode for any mutations so admins can manage data without
+// hitting AppSync 401 errors when signed in.
+export const dataClient = generateClient({ authMode: "apiKey" });
+
+export const authModes = {
+  read: { authMode: "apiKey" },
+  write: { authMode: "userPool" },
+};
 
 export const fetchOptionLists = async () => {
   const [writers, recipients, categories] = await Promise.all([
-    dataClient.models.LetterWriter.list(),
-    dataClient.models.LetterRecipient.list(),
-    dataClient.models.LetterCategory.list(),
+    dataClient.models.LetterWriter.list(authModes.read),
+    dataClient.models.LetterRecipient.list(authModes.read),
+    dataClient.models.LetterCategory.list(authModes.read),
   ]);
 
   return {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { dataClient, fetchOptionLists, uploadLetterFile } from "../lib/dataClient";
+import { authModes, dataClient, fetchOptionLists, uploadLetterFile } from "../lib/dataClient";
 
 function AddLetter() {
   const [formData, setFormData] = useState({
@@ -50,17 +50,20 @@ function AddLetter() {
 
       const s3Key = await uploadLetterFile(formData.file);
 
-      await dataClient.models.Letter.create({
-        title: formData.title,
-        writerId: formData.writer,
-        writerName: writer?.name ?? "",
-        recipientId: formData.recipient,
-        recipientName: recipient?.name ?? "",
-        categoryId: formData.category,
-        categoryName: category?.name ?? "",
-        content: "",
-        s3Key,
-      });
+      await dataClient.models.Letter.create(
+        {
+          title: formData.title,
+          writerId: formData.writer,
+          writerName: writer?.name ?? "",
+          recipientId: formData.recipient,
+          recipientName: recipient?.name ?? "",
+          categoryId: formData.category,
+          categoryName: category?.name ?? "",
+          content: "",
+          s3Key,
+        },
+        authModes.write
+      );
 
       navigate('/letters');
     } catch (error) {
