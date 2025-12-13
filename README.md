@@ -7,6 +7,10 @@ This is a web application for managing and viewing director's letters.
 - **Letters**: Uploaded `.docx` files are converted to HTML and stored in an S3 bucket managed by Amplify Storage (`letterBucket`). A signed download URL is returned by the API for each letter. The rendered HTML is also persisted in Postgres for searchability.
 - **Dropdown data**: Writers, recipients, and categories continue to live in Postgres tables (`letterwriters`, `letterrecipients`, `lettercategories`).
 
+## Amplify footprint
+
+- Amplify Gen 2 currently provisions **only** S3 storage for letters. The REST API continues to run in Express, so no Amplify API resource is required—frontend calls hit the existing `/api/...` endpoints directly.
+
 ## Running the Project Locally
 
 To run this project locally, follow these steps:

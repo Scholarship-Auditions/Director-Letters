@@ -13,8 +13,27 @@ const AdminDashboard = () => {
     lettercategories: [],
   });
   const [formValues, setFormValues] = useState(initialForm);
+  const [editSelection, setEditSelection] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const optionConfig = {
+    writer: {
+      key: "writer_id",
+      endpoint: "writers",
+      label: "Writer",
+    },
+    recipient: {
+      key: "recipient_id",
+      endpoint: "recipients",
+      label: "Recipient",
+    },
+    category: {
+      key: "category_id",
+      endpoint: "categories",
+      label: "Category",
+    },
+  };
 
   const fetchOptions = async () => {
     try {
@@ -33,6 +52,10 @@ const AdminDashboard = () => {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditChange = (event) => {
+    setEditSelection((prev) => ({ ...prev, newName: event.target.value }));
   };
 
   const handleSubmit = async (event) => {
@@ -84,7 +107,7 @@ const AdminDashboard = () => {
     [options]
   );
 
-  const renderList = (label, items, keyField) => (
+  const renderList = (type, label, items, keyField) => (
     <div className="admin-card">
       <h3>{label}</h3>
       {items.length === 0 ? (
@@ -92,12 +115,59 @@ const AdminDashboard = () => {
       ) : (
         <ul className="option-list">
           {items.map((item) => (
-            <li key={item[keyField]}>{item.name}</li>
+            <li key={item[keyField]} className="option-row">
+              <span>{item.name}</span>
+              <button
+                type="button"
+                className="link-button"
+                onClick={() =>
+                  setEditSelection({
+                    type,
+                    id: item[keyField],
+                    currentName: item.name,
+                    newName: item.name,
+                  })
+                }
+              >
+                Edit
+              </button>
+            </li>
           ))}
         </ul>
       )}
     </div>
   );
+
+  const handleEditSubmit = async (event) => {
+    event.preventDefault();
+    if (!editSelection?.type || !editSelection.newName?.trim()) {
+      setError("Enter a new name before saving your change.");
+      return;
+    }
+
+    const config = optionConfig[editSelection.type];
+    if (!config) {
+      setError("Unknown option type selected.");
+      return;
+    }
+
+    setIsSaving(true);
+    setError("");
+
+    try {
+      await api.put(
+        `/api/options/${config.endpoint}/${editSelection.id}`,
+        { name: editSelection.newName.trim() }
+      );
+      setEditSelection(null);
+      fetchOptions();
+    } catch (err) {
+      console.error("Failed to update option", err);
+      setError("Could not update the selected option. Please retry.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="admin-wrapper">
@@ -124,9 +194,19 @@ const AdminDashboard = () => {
             </header>
 
             <section className="admin-grid">
-              {renderList("Writers", sortedOptions.writers, "writer_id")}
-              {renderList("Recipients", sortedOptions.recipients, "recipient_id")}
-              {renderList("Categories", sortedOptions.categories, "category_id")}
+              {renderList("writer", "Writers", sortedOptions.writers, "writer_id")}
+              {renderList(
+                "recipient",
+                "Recipients",
+                sortedOptions.recipients,
+                "recipient_id"
+              )}
+              {renderList(
+                "category",
+                "Categories",
+                sortedOptions.categories,
+                "category_id"
+              )}
             </section>
 
             <section className="admin-form-card">
@@ -175,12 +255,44 @@ const AdminDashboard = () => {
                     type="button"
                     className="secondary-button"
                     onClick={() => setFormValues(initialForm)}
+                  disabled={isSaving}
+                >
+                  Clear
+                </button>
+              </div>
+            </form>
+
+            {editSelection && (
+              <div className="admin-form edit-form">
+                <div className="admin-field">
+                  <span>Editing {optionConfig[editSelection.type]?.label}</span>
+                  <input
+                    type="text"
+                    value={editSelection.newName}
+                    onChange={handleEditChange}
+                    placeholder={`Rename ${editSelection.currentName}`}
+                  />
+                </div>
+                <div className="admin-actions">
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={handleEditSubmit}
                     disabled={isSaving}
                   >
-                    Clear
+                    {isSaving ? "Saving..." : "Save edit"}
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => setEditSelection(null)}
+                    disabled={isSaving}
+                  >
+                    Cancel
                   </button>
                 </div>
-              </form>
+              </div>
+            )}
             </section>
           </div>
         )}

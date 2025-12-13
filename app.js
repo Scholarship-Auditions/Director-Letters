@@ -332,7 +332,7 @@ app.get("/api/options", async (req, res) => {
   }
 });
 
-app.post("/api/options/writers", async (req, res) => {
+app.post("/api/options/writers", authenticateToken, async (req, res) => {
   try {
     const { name } = req.body;
     if (!name) {
@@ -349,7 +349,30 @@ app.post("/api/options/writers", async (req, res) => {
   }
 });
 
-app.post("/api/options/recipients", async (req, res) => {
+app.put("/api/options/writers/:id", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: "Writer name is required." });
+    }
+
+    const updateQuery =
+      "UPDATE letterwriters SET name = $1 WHERE writer_id = $2 RETURNING writer_id, name";
+    const { rows } = await pool.query(updateQuery, [name, id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Writer not found." });
+    }
+
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error updating writer:", error);
+    res.status(500).json({ message: "Error updating writer." });
+  }
+});
+
+app.post("/api/options/recipients", authenticateToken, async (req, res) => {
   try {
     const { name } = req.body;
     if (!name) {
@@ -366,7 +389,35 @@ app.post("/api/options/recipients", async (req, res) => {
   }
 });
 
-app.post("/api/options/categories", async (req, res) => {
+app.put(
+  "/api/options/recipients/:id",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ message: "Recipient name is required." });
+      }
+
+      const updateQuery =
+        "UPDATE letterrecipients SET name = $1 WHERE recipient_id = $2 RETURNING recipient_id, name";
+      const { rows } = await pool.query(updateQuery, [name, id]);
+
+      if (rows.length === 0) {
+        return res.status(404).json({ message: "Recipient not found." });
+      }
+
+      res.json(rows[0]);
+    } catch (error) {
+      console.error("Error updating recipient:", error);
+      res.status(500).json({ message: "Error updating recipient." });
+    }
+  }
+);
+
+app.post("/api/options/categories", authenticateToken, async (req, res) => {
   try {
     const { name } = req.body;
     if (!name) {
@@ -382,6 +433,34 @@ app.post("/api/options/categories", async (req, res) => {
     res.status(500).json({ message: "Error creating category." });
   }
 });
+
+app.put(
+  "/api/options/categories/:id",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ message: "Category name is required." });
+      }
+
+      const updateQuery =
+        "UPDATE lettercategories SET name = $1 WHERE category_id = $2 RETURNING category_id, name";
+      const { rows } = await pool.query(updateQuery, [name, id]);
+
+      if (rows.length === 0) {
+        return res.status(404).json({ message: "Category not found." });
+      }
+
+      res.json(rows[0]);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      res.status(500).json({ message: "Error updating category." });
+    }
+  }
+);
 
 
 ///sql connection

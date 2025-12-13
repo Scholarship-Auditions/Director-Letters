@@ -73,6 +73,22 @@ body {
   border-bottom: 1px solid #f0f2f5;
 }
 
+.option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
 .option-list li:last-child {
   border-bottom: none;
 }
