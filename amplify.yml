@@ -1,22 +1,22 @@
 version: 1
 applications:
-  - appRoot: client
+  - appRoot: .
     backend:
       phases:
         build:
           commands:
-            - npm ci
-            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+            - cd client && npm ci
+            - cd client && npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
     frontend:
       phases:
         build:
           commands:
-            - npm run build
+            - cd client && npm ci
+            - cd client && npm run build
       artifacts:
-        # If using Create React App, change 'dist' to 'build'
-        baseDirectory: dist
+        baseDirectory: client/dist
         files:
           - "**/*"
       cache:
         paths:
-          - node_modules/**/*
+          - client/node_modules/**/*
