@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import api from '../api';
+import { dataClient } from "../lib/dataClient";
 import Letter from '../components/Letter';
 
 function DirectorLetters() {
@@ -10,8 +10,21 @@ function DirectorLetters() {
   useEffect(() => {
     const fetchLetters = async () => {
       try {
-        const response = await api.get(`/api/letters/director/${directorName}`);
-        setLetters(response.data);
+        const { data: writers } = await dataClient.models.LetterWriter.list({
+          filter: { name: { eq: directorName } },
+        });
+
+        const writer = writers?.[0];
+        if (!writer) {
+          setLetters([]);
+          return;
+        }
+
+        const { data } = await dataClient.models.Letter.list({
+          filter: { writerId: { eq: writer.id } },
+        });
+
+        setLetters(data ?? []);
       } catch (error) {
         console.error(`Failed to fetch letters for ${directorName}:`, error);
       }
@@ -23,7 +36,7 @@ function DirectorLetters() {
     <div>
       <h1>{directorName} Letters</h1>
       {letters.map((letter) => (
-        <Letter key={letter.letter_id} letter={letter} />
+        <Letter key={letter.id} letter={letter} />
       ))}
     </div>
   );

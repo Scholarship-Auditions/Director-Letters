@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
+import { dataClient, fetchOptionLists, uploadLetterFile } from "../lib/dataClient";
 
 function AddLetter() {
   const [formData, setFormData] = useState({
@@ -20,12 +20,13 @@ function AddLetter() {
   useEffect(() => {
     const fetchFormOptions = async () => {
       try {
-        const response = await api.get('/api/form-data/add-letter');
-        setFormOptions(response.data);
+        const options = await fetchOptionLists();
+        setFormOptions(options);
       } catch (error) {
-        console.error('Failed to fetch form options:', error);
+        console.error("Failed to fetch form options:", error);
       }
     };
+
     fetchFormOptions();
   }, []);
 
@@ -40,22 +41,30 @@ function AddLetter() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const postData = new FormData();
-    postData.append('title', formData.title);
-    postData.append('writer', formData.writer);
-    postData.append('recipient', formData.recipient);
-    postData.append('category', formData.category);
-    postData.append('file', formData.file);
-
     try {
-      await api.post('/api/letters', postData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const [writer, recipient, category] = [
+        formOptions.letterwriters.find((item) => item.id === formData.writer),
+        formOptions.letterrecipients.find((item) => item.id === formData.recipient),
+        formOptions.lettercategories.find((item) => item.id === formData.category),
+      ];
+
+      const s3Key = await uploadLetterFile(formData.file);
+
+      await dataClient.models.Letter.create({
+        title: formData.title,
+        writerId: formData.writer,
+        writerName: writer?.name ?? "",
+        recipientId: formData.recipient,
+        recipientName: recipient?.name ?? "",
+        categoryId: formData.category,
+        categoryName: category?.name ?? "",
+        content: "",
+        s3Key,
       });
+
       navigate('/letters');
     } catch (error) {
-      console.error('Failed to add letter:', error);
+      console.error("Failed to add letter:", error);
     }
   };
 
@@ -72,7 +81,7 @@ function AddLetter() {
           <select name="writer" value={formData.writer} onChange={handleChange} required>
             <option value="">Select a writer</option>
             {formOptions.letterwriters.map((writer) => (
-              <option key={writer.writer_id} value={writer.writer_id}>
+              <option key={writer.id} value={writer.id}>
                 {writer.name}
               </option>
             ))}
@@ -83,7 +92,7 @@ function AddLetter() {
           <select name="recipient" value={formData.recipient} onChange={handleChange} required>
             <option value="">Select a recipient</option>
             {formOptions.letterrecipients.map((recipient) => (
-              <option key={recipient.recipient_id} value={recipient.recipient_id}>
+              <option key={recipient.id} value={recipient.id}>
                 {recipient.name}
               </option>
             ))}
@@ -94,7 +103,7 @@ function AddLetter() {
           <select name="category" value={formData.category} onChange={handleChange} required>
             <option value="">Select a category</option>
             {formOptions.lettercategories.map((category) => (
-              <option key={category.category_id} value={category.category_id}>
+              <option key={category.id} value={category.id}>
                 {category.name}
               </option>
             ))}

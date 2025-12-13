@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../api';
+import { dataClient, fetchOptionLists } from "../lib/dataClient";
 
 function EditLetter() {
   const [formData, setFormData] = useState({
@@ -22,19 +22,23 @@ function EditLetter() {
     const fetchLetterAndOptions = async () => {
       try {
         const [letterResponse, optionsResponse] = await Promise.all([
-          api.get(`/api/letters/${id}`),
-          api.get('/api/form-data/add-letter'),
+          dataClient.models.Letter.get({ id }),
+          fetchOptionLists(),
         ]);
 
-        const letter = letterResponse.data;
+        const letter = letterResponse?.data;
+        if (!letter) {
+          setFormOptions(optionsResponse);
+          return;
+        }
         setFormData({
           title: letter.title,
           content: letter.content,
-          writer: letter.writer_id,
-          recipient: letter.recipient_id,
-          category: letter.category_id,
+          writer: letter.writerId,
+          recipient: letter.recipientId,
+          category: letter.categoryId,
         });
-        setFormOptions(optionsResponse.data);
+        setFormOptions(optionsResponse);
       } catch (error) {
         console.error('Failed to fetch letter or options:', error);
       }
@@ -50,7 +54,14 @@ function EditLetter() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/api/letters/${id}`, formData);
+      await dataClient.models.Letter.update({
+        id,
+        title: formData.title,
+        content: formData.content,
+        writerId: formData.writer,
+        recipientId: formData.recipient,
+        categoryId: formData.category,
+      });
       navigate(`/letters/${id}`);
     } catch (error) {
       console.error('Failed to update letter:', error);
@@ -74,7 +85,7 @@ function EditLetter() {
           <select name="writer" value={formData.writer} onChange={handleChange} required>
             <option value="">Select a writer</option>
             {formOptions.letterwriters.map((writer) => (
-              <option key={writer.writer_id} value={writer.writer_id}>
+              <option key={writer.id} value={writer.id}>
                 {writer.name}
               </option>
             ))}
@@ -85,7 +96,7 @@ function EditLetter() {
           <select name="recipient" value={formData.recipient} onChange={handleChange} required>
             <option value="">Select a recipient</option>
             {formOptions.letterrecipients.map((recipient) => (
-              <option key={recipient.recipient_id} value={recipient.recipient_id}>
+              <option key={recipient.id} value={recipient.id}>
                 {recipient.name}
               </option>
             ))}
@@ -96,7 +107,7 @@ function EditLetter() {
           <select name="category" value={formData.category} onChange={handleChange} required>
             <option value="">Select a category</option>
             {formOptions.lettercategories.map((category) => (
-              <option key={category.category_id} value={category.category_id}>
+              <option key={category.id} value={category.id}>
                 {category.name}
               </option>
             ))}

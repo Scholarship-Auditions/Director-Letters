@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Authenticator } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
-import api from "../api";
+import { dataClient, fetchOptionLists } from "../lib/dataClient";
 import { Link } from "react-router-dom";
 
 const initialForm = { writer: "", recipient: "", category: "" };
@@ -19,26 +19,26 @@ const AdminDashboard = () => {
 
   const optionConfig = {
     writer: {
-      key: "writer_id",
-      endpoint: "writers",
+      key: "id",
+      endpoint: "LetterWriter",
       label: "Writer",
     },
     recipient: {
-      key: "recipient_id",
-      endpoint: "recipients",
+      key: "id",
+      endpoint: "LetterRecipient",
       label: "Recipient",
     },
     category: {
-      key: "category_id",
-      endpoint: "categories",
+      key: "id",
+      endpoint: "LetterCategory",
       label: "Category",
     },
   };
 
   const fetchOptions = async () => {
     try {
-      const { data } = await api.get("/api/options");
-      setOptions(data);
+      const optionData = await fetchOptionLists();
+      setOptions(optionData);
     } catch (err) {
       console.error("Failed to load options", err);
       setError("Unable to load dropdown options. Please try again.");
@@ -67,17 +67,21 @@ const AdminDashboard = () => {
       const requests = [];
       if (formValues.writer.trim()) {
         requests.push(
-          api.post("/api/options/writers", { name: formValues.writer.trim() })
+          dataClient.models.LetterWriter.create({ name: formValues.writer.trim() })
         );
       }
       if (formValues.recipient.trim()) {
         requests.push(
-          api.post("/api/options/recipients", { name: formValues.recipient.trim() })
+          dataClient.models.LetterRecipient.create({
+            name: formValues.recipient.trim(),
+          })
         );
       }
       if (formValues.category.trim()) {
         requests.push(
-          api.post("/api/options/categories", { name: formValues.category.trim() })
+          dataClient.models.LetterCategory.create({
+            name: formValues.category.trim(),
+          })
         );
       }
 
@@ -107,7 +111,7 @@ const AdminDashboard = () => {
     [options]
   );
 
-  const renderList = (type, label, items, keyField) => (
+  const renderList = (type, label, items) => (
     <div className="admin-card">
       <h3>{label}</h3>
       {items.length === 0 ? (
@@ -115,7 +119,7 @@ const AdminDashboard = () => {
       ) : (
         <ul className="option-list">
           {items.map((item) => (
-            <li key={item[keyField]} className="option-row">
+            <li key={item.id} className="option-row">
               <span>{item.name}</span>
               <button
                 type="button"
@@ -123,7 +127,7 @@ const AdminDashboard = () => {
                 onClick={() =>
                   setEditSelection({
                     type,
-                    id: item[keyField],
+                    id: item.id,
                     currentName: item.name,
                     newName: item.name,
                   })
@@ -155,10 +159,10 @@ const AdminDashboard = () => {
     setError("");
 
     try {
-      await api.put(
-        `/api/options/${config.endpoint}/${editSelection.id}`,
-        { name: editSelection.newName.trim() }
-      );
+      await dataClient.models[config.endpoint].update({
+        id: editSelection.id,
+        name: editSelection.newName.trim(),
+      });
       setEditSelection(null);
       fetchOptions();
     } catch (err) {
@@ -194,18 +198,16 @@ const AdminDashboard = () => {
             </header>
 
             <section className="admin-grid">
-              {renderList("writer", "Writers", sortedOptions.writers, "writer_id")}
+              {renderList("writer", "Writers", sortedOptions.writers)}
               {renderList(
                 "recipient",
                 "Recipients",
-                sortedOptions.recipients,
-                "recipient_id"
+                sortedOptions.recipients
               )}
               {renderList(
                 "category",
                 "Categories",
-                sortedOptions.categories,
-                "category_id"
+                sortedOptions.categories
               )}
             </section>
 
