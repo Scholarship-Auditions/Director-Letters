@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Authenticator } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
-import { dataClient, fetchOptionLists } from "../lib/dataClient";
+import { authModes, dataClient, fetchOptionLists } from "../lib/dataClient";
 import { Link } from "react-router-dom";
 
 const initialForm = { writer: "", recipient: "", category: "" };
@@ -67,21 +67,30 @@ const AdminDashboard = () => {
       const requests = [];
       if (formValues.writer.trim()) {
         requests.push(
-          dataClient.models.LetterWriter.create({ name: formValues.writer.trim() })
+          dataClient.models.LetterWriter.create(
+            { name: formValues.writer.trim() },
+            authModes.write
+          )
         );
       }
       if (formValues.recipient.trim()) {
         requests.push(
-          dataClient.models.LetterRecipient.create({
-            name: formValues.recipient.trim(),
-          })
+          dataClient.models.LetterRecipient.create(
+            {
+              name: formValues.recipient.trim(),
+            },
+            authModes.write
+          )
         );
       }
       if (formValues.category.trim()) {
         requests.push(
-          dataClient.models.LetterCategory.create({
-            name: formValues.category.trim(),
-          })
+          dataClient.models.LetterCategory.create(
+            {
+              name: formValues.category.trim(),
+            },
+            authModes.write
+          )
         );
       }
 
@@ -159,10 +168,13 @@ const AdminDashboard = () => {
     setError("");
 
     try {
-      await dataClient.models[config.endpoint].update({
-        id: editSelection.id,
-        name: editSelection.newName.trim(),
-      });
+      await dataClient.models[config.endpoint].update(
+        {
+          id: editSelection.id,
+          name: editSelection.newName.trim(),
+        },
+        authModes.write
+      );
       setEditSelection(null);
       fetchOptions();
     } catch (err) {

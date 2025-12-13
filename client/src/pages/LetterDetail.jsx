@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { dataClient, buildSignedLetterUrl } from "../lib/dataClient";
+import { authModes, dataClient, buildSignedLetterUrl } from "../lib/dataClient";
 
 function LetterDetail() {
   const [letter, setLetter] = useState(null);
@@ -31,7 +31,7 @@ function LetterDetail() {
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this letter?')) {
       try {
-        await dataClient.models.Letter.delete({ id });
+        await dataClient.models.Letter.delete({ id }, authModes.write);
         navigate('/letters');
       } catch (error) {
         console.error('Failed to delete letter:', error);

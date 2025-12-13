@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { dataClient, fetchOptionLists } from "../lib/dataClient";
+import { authModes, dataClient, fetchOptionLists } from "../lib/dataClient";
 
 function EditLetter() {
   const [formData, setFormData] = useState({
@@ -54,14 +54,17 @@ function EditLetter() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await dataClient.models.Letter.update({
-        id,
-        title: formData.title,
-        content: formData.content,
-        writerId: formData.writer,
-        recipientId: formData.recipient,
-        categoryId: formData.category,
-      });
+      await dataClient.models.Letter.update(
+        {
+          id,
+          title: formData.title,
+          content: formData.content,
+          writerId: formData.writer,
+          recipientId: formData.recipient,
+          categoryId: formData.category,
+        },
+        authModes.write
+      );
       navigate(`/letters/${id}`);
     } catch (error) {
       console.error('Failed to update letter:', error);
