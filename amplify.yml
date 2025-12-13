@@ -1,26 +1,29 @@
 version: 1
-applications:
-  - appRoot: .
-    backend:
-      phases:
-        build:
-          commands:
-            # Navigate to client folder explicitly
-            - cd client && npm ci
-            - cd client && npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
-    frontend:
-      phases:
-        preBuild:
-          commands:
-            - cd client && npm ci
-        build:
-          commands:
-            - cd client && npm run build
-      artifacts:
-        # Adjusted path since we are running from root
-        baseDirectory: client/dist
-        files:
-          - "**/*"
-      cache:
-        paths:
-          - client/node_modules/**/*
+backend:
+  phases:
+    build:
+      commands:
+        # Fix 1: Explicitly go to the correct folder
+        - cd client
+        # Fix 2: Actually install dependencies
+        - npm ci
+        # Fix 3: Deploy your Auth/Backend resources
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - cd client
+        - npm ci
+    build:
+      commands:
+        - cd client
+        - npm run build
+  artifacts:
+    # Point to the dist folder inside client
+    baseDirectory: client/dist
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - client/node_modules/**/*
