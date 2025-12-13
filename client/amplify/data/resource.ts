@@ -5,17 +5,26 @@ const schema = a.schema({
     .model({
       name: a.string().required(),
     })
-    .authorization((allow) => [allow.guest()]),
+    .authorization((allow) => [
+      allow.guest().to(["read"]),
+      allow.authenticated(),
+    ]),
   LetterRecipient: a
     .model({
       name: a.string().required(),
     })
-    .authorization((allow) => [allow.guest()]),
+    .authorization((allow) => [
+      allow.guest().to(["read"]),
+      allow.authenticated(),
+    ]),
   LetterCategory: a
     .model({
       name: a.string().required(),
     })
-    .authorization((allow) => [allow.guest()]),
+    .authorization((allow) => [
+      allow.guest().to(["read"]),
+      allow.authenticated(),
+    ]),
   Letter: a
     .model({
       title: a.string().required(),
@@ -28,7 +37,7 @@ const schema = a.schema({
       categoryName: a.string().required(),
       s3Key: a.string(),
     })
-    .authorization((allow) => [allow.guest()]),
+    .authorization((allow) => [allow.authenticated()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
