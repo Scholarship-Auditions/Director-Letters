@@ -3,25 +3,20 @@ backend:
   phases:
     build:
       commands:
-        # Skip Amplify backend deployment when no backend is defined
-        - |
-          if [ -d amplify/backend ]; then
-            cd client
-            npm ci
-            npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
-          else
-            echo "No Amplify backend found; skipping backend deployment"
-          fi
+        # 1. Force entry into client folder (Removed the 'if' check)
+        - cd client
+        - npm ci
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
     preBuild:
       commands:
-        - npm ci --prefix client
+        # 2. Use 'npm install' instead of 'ci' to fix the Rollup/Linux error
+        - cd client && npm install
     build:
       commands:
-        - npm run build --prefix client
+        - cd client && npm run build
   artifacts:
-    # Point to the dist folder inside client
     baseDirectory: client/dist
     files:
       - "**/*"
