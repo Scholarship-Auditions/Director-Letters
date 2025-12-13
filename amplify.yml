@@ -1,9 +1,12 @@
 version: 1
 applications:
-  # Amplify UI was configured with monorepo root set to "client/src", so the appRoot
-  # must match that path even though the package.json lives in the parent "client".
-  # Commands use "--prefix .." to run from the actual project root.
   - appRoot: client/src
+    backend:
+      phases:
+        build:
+          commands:
+            - npm ci --prefix ..
+            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
     frontend:
       phases:
         preBuild:
@@ -15,7 +18,7 @@ applications:
       artifacts:
         baseDirectory: ../dist
         files:
-          - '**/*'
+          - "**/*"
       cache:
         paths:
           - ../node_modules/**/*
