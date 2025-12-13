@@ -1,0 +1,19 @@
+version: 1
+applications:
+  # Build and deploy the Vite React app that lives in the monorepo at client/
+  - appRoot: client
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm ci
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
