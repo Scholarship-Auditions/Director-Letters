@@ -1,17 +1,22 @@
 version: 1
 applications:
-  - appRoot: .
+  - appRoot: client
+    backend:
+      phases:
+        build:
+          commands:
+            - npm ci
+            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
     frontend:
       phases:
-        preBuild:
+        build:
           commands:
-            - echo "==== DIRECTORY LISTING START ===="
-            - ls -R
-            - echo "==== DIRECTORY LISTING END ===="
+            - npm run build
       artifacts:
+        # If using Create React App, change 'dist' to 'build'
         baseDirectory: dist
         files:
           - "**/*"
-    cache:
-      paths:
-        - node_modules/**/*
+      cache:
+        paths:
+          - node_modules/**/*
