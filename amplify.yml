@@ -1,13 +1,17 @@
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - ls -R # This prints all files so you can see the real structure in the logs
-    build:
-      commands:
-        - echo "Debugging structure"
-  artifacts:
-    baseDirectory: dist
-    files:
-      - "**/*"
+applications:
+  - appRoot: .
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - echo "==== DIRECTORY LISTING START ===="
+            - ls -R
+            - echo "==== DIRECTORY LISTING END ===="
+      artifacts:
+        baseDirectory: dist
+        files:
+          - "**/*"
+    cache:
+      paths:
+        - node_modules/**/*
