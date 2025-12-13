@@ -40,6 +40,13 @@ function LetterDetail() {
     <div>
       <h1>{letter.title}</h1>
       <div dangerouslySetInnerHTML={{ __html: letter.content }} />
+      {letter.s3_url && (
+        <p>
+          <a href={letter.s3_url} download>
+            Download original HTML
+          </a>
+        </p>
+      )}
       {isAuthenticated && (
         <>
           <Link to={`/letters/${id}/edit`}>Edit</Link>
