@@ -1,7 +1,10 @@
 import { generateClient } from "aws-amplify/data";
 import { getUrl, uploadData } from "aws-amplify/storage";
 
-export const dataClient = generateClient();
+// Use the identity pool auth mode by default so unauthenticated visitors can
+// read public models (e.g., dropdown options) without hitting "Not Authorized"
+// errors. Authenticated users continue to work for protected mutations.
+export const dataClient = generateClient({ authMode: "identityPool" });
 
 export const fetchOptionLists = async () => {
   const [writers, recipients, categories] = await Promise.all([
