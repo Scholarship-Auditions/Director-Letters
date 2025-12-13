@@ -10,21 +10,21 @@ const Letters = ({ title, categoryFilter }) => {
     const currentUser = null;
 
     const lettercategories = [
-        { category_id: 1, name: 'Band' },
-        { category_id: 2, name: 'Choir' },
-        { category_id: 3, name: 'Orchestra' },
-        { category_id: 4, name: 'Musical Theater' },
+        { id: 1, name: 'Band' },
+        { id: 2, name: 'Choir' },
+        { id: 3, name: 'Orchestra' },
+        { id: 4, name: 'Musical Theater' },
     ];
 
     const allLetters = [
-        { letter_id: 1, title: 'Welcome Back Letter', content: 'Welcome back to a new school year...', writer_name: 'John Doe', recipient_name: 'Parents', category_name: 'Band', category_id: 1 },
-        { letter_id: 2, title: 'Concert Invitation', content: 'You are invited to our winter concert...', writer_name: 'Jane Smith', recipient_name: 'Community', category_name: 'Choir', category_id: 2 },
+        { id: 1, title: 'Welcome Back Letter', content: 'Welcome back to a new school year...', writerName: 'John Doe', recipientName: 'Parents', categoryName: 'Band', categoryId: 1 },
+        { id: 2, title: 'Concert Invitation', content: 'You are invited to our winter concert...', writerName: 'Jane Smith', recipientName: 'Community', categoryName: 'Choir', categoryId: 2 },
         // Add more mock data as needed
     ];
 
     const filteredLetters = allLetters.filter(letter => {
         const matchesSearch = letter.title.toLowerCase().includes(searchQuery.toLowerCase()) || letter.content.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory = selectedCategory ? letter.category_id === parseInt(selectedCategory) : true;
+        const matchesCategory = selectedCategory ? letter.categoryId === parseInt(selectedCategory) : true;
         return matchesSearch && matchesCategory;
     });
 
@@ -53,7 +53,7 @@ const Letters = ({ title, categoryFilter }) => {
                         >
                             <option value="">All Categories</option>
                             {lettercategories.map((category) => (
-                                <option key={category.category_id} value={category.category_id}>
+                                <option key={category.id} value={category.id}>
                                     {category.name}
                                 </option>
                             ))}
@@ -63,16 +63,16 @@ const Letters = ({ title, categoryFilter }) => {
                     <div className="letters">
                         {filteredLetters.length > 0 ? (
                             filteredLetters.map((letter) => (
-                                <div className="letter" key={letter.letter_id}>
+                                <div className="letter" key={letter.id}>
                                     <h3>{letter.title}</h3>
                                     <p>{letter.content}</p>
-                                    <h5>Writer: {letter.writer_name}</h5>
-                                    <h5>For: {letter.recipient_name}</h5>
-                                    <h5>Category {letter.category_name}</h5>
+                                    <h5>Writer: {letter.writerName}</h5>
+                                    <h5>For: {letter.recipientName}</h5>
+                                    <h5>Category {letter.categoryName}</h5>
                                     {currentUser ? (
-                                        <Link to={`/letters/${letter.letter_id}`} className="btn btn-primary">View Actions</Link>
+                                        <Link to={`/letters/${letter.id}`} className="btn btn-primary">View Actions</Link>
                                     ) : (
-                                        <Link to={`/view-docx/${letter.letter_id}`} className="btn btn-primary">Download</Link>
+                                        <Link to={`/view-docx/${letter.id}`} className="btn btn-primary">Download</Link>
                                     )}
                                 </div>
                             ))

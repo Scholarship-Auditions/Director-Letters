@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
+import { signIn, signUp } from "aws-amplify/auth";
 
 const Register = () => {
     const [email, setEmail] = useState('');
@@ -13,22 +13,20 @@ const Register = () => {
         setError('');
 
         try {
-            // The backend expects 'username' but the form is for 'email', so we map email to username
-            const response = await api.post('/api/auth/register', {
+            await signUp({
                 username: email,
-                password: password
+                password,
+                options: { userAttributes: { email } },
             });
 
-            // Assuming the backend returns a token upon successful registration
-            const { token } = response.data;
-            if (token) {
-                localStorage.setItem('token', token);
-                // Redirect to home or admin dashboard after successful registration
+            const { isSignedIn } = await signIn({ username: email, password });
+
+            if (isSignedIn) {
                 navigate('/');
             }
         } catch (err) {
             console.error('Registration failed:', err);
-            setError(err.response?.data?.message || 'Registration failed. Please try again.');
+            setError(err.message || 'Registration failed. Please try again.');
         }
     };
 

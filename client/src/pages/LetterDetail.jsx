@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import api from '../api';
 import { useAuth } from '../context/AuthContext';
+import { dataClient, buildSignedLetterUrl } from "../lib/dataClient";
 
 function LetterDetail() {
   const [letter, setLetter] = useState(null);
@@ -12,8 +12,15 @@ function LetterDetail() {
   useEffect(() => {
     const fetchLetter = async () => {
       try {
-        const response = await api.get(`/api/letters/${id}`);
-        setLetter(response.data);
+        const { data } = await dataClient.models.Letter.get({ id });
+        if (!data) {
+          setLetter(null);
+          return;
+        }
+
+        const s3Url = await buildSignedLetterUrl(data.s3Key);
+
+        setLetter({ ...data, s3_url: s3Url });
       } catch (error) {
         console.error('Failed to fetch letter:', error);
       }
@@ -24,7 +31,7 @@ function LetterDetail() {
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this letter?')) {
       try {
-        await api.delete(`/api/letters/${id}`);
+        await dataClient.models.Letter.delete({ id });
         navigate('/letters');
       } catch (error) {
         console.error('Failed to delete letter:', error);
