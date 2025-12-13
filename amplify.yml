@@ -16,12 +16,10 @@ frontend:
   phases:
     preBuild:
       commands:
-        - cd client
-        - npm ci
+        - npm ci --prefix client
     build:
       commands:
-        - cd client
-        - npm run build
+        - npm run build --prefix client
   artifacts:
     # Point to the dist folder inside client
     baseDirectory: client/dist
