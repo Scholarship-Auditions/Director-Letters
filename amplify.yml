@@ -3,19 +3,20 @@ backend:
   phases:
     build:
       commands:
-        # 1. Force entry into client folder (Removed the 'if' check)
         - cd client
-        - npm ci
+        # CHANGED: Use 'npm install' to fetch the Linux version of parcel/watcher
+        - npm install
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
     preBuild:
       commands:
-        # 2. Use 'npm install' instead of 'ci' to fix the Rollup/Linux error
-        - cd client && npm install
+        - cd client
+        - npm install
     build:
       commands:
-        - cd client && npm run build
+        - cd client
+        - npm run build
   artifacts:
     baseDirectory: client/dist
     files:
