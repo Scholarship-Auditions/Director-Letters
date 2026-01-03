@@ -1,87 +1,102 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { generateClient } from "aws-amplify/data";
-import { getUrl } from "aws-amplify/storage";
+import { getUrl, remove } from "aws-amplify/storage";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 
-// 1. Create the Data Client
+// Generate client
 const client = generateClient();
 
 const Letters = ({ title, categoryFilter }) => {
-  // Auth Hook to check if user is Admin
+  // 1. Get User Auth Status
   const { user } = useAuthenticator((context) => [context.user]);
 
-  // State for Real Data
   const [letters, setLetters] = useState([]);
   const [categories, setCategories] = useState([]);
-
-  // State for Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(
     categoryFilter || ""
   );
-
-  // Loading State
   const [loading, setLoading] = useState(true);
 
-  // 2. Fetch Data on Load
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // A. Fetch Categories for dropdown
-        const { data: catData } = await client.models.LetterCategory.list();
-        setCategories(catData);
-
-        // B. Fetch All Letters
-        const { data: letterData } = await client.models.Letter.list();
-
-        // C. Generate Download URLs for each letter
-        // We map over the letters and add a 'downloadUrl' property to each
-        const lettersWithUrls = await Promise.all(
-          letterData.map(async (letter) => {
-            if (!letter.s3Key) return letter;
-            try {
-              const link = await getUrl({
-                path: letter.s3Key,
-                // options: { expiresIn: 3600 } // Link valid for 1 hour
-              });
-              return { ...letter, downloadUrl: link.url };
-            } catch (err) {
-              console.error("Error generating URL for", letter.title, err);
-              return letter;
-            }
-          })
-        );
-
-        setLetters(lettersWithUrls);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
-  // 3. Filter Logic (Runs locally on the fetched data)
+  const fetchData = async () => {
+    try {
+      // A. Fetch Categories
+      const { data: catData } = await client.models.LetterCategory.list();
+      setCategories(catData);
+
+      // B. Fetch Letters
+      const { data: letterData } = await client.models.Letter.list();
+
+      // C. Generate Signed URLs for downloads
+      const lettersWithUrls = await Promise.all(
+        letterData.map(async (letter) => {
+          if (!letter.s3Key) return letter;
+          try {
+            const link = await getUrl({ path: letter.s3Key });
+            return { ...letter, downloadUrl: link.url };
+          } catch (err) {
+            // This catches the "NoBucket" error if config is still bad
+            console.error("Error getting URL for:", letter.title, err);
+            return letter;
+          }
+        })
+      );
+
+      setLetters(lettersWithUrls);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- NEW: DELETE FUNCTION ---
+  const handleDelete = async (id, s3Key) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this letter?"
+    );
+    if (!confirmed) return;
+
+    try {
+      // 1. Remove File from S3 (if key exists)
+      if (s3Key) {
+        await remove({ path: s3Key });
+      }
+
+      // 2. Remove Record from Database
+      await client.models.Letter.delete({ id });
+
+      // 3. Update UI
+      setLetters((prev) => prev.filter((item) => item.id !== id));
+      alert("Letter deleted.");
+    } catch (error) {
+      console.error("Delete failed:", error);
+      alert("Could not delete. Check console for details.");
+    }
+  };
+
+  // Filter Logic
   const filteredLetters = letters.filter((letter) => {
     const query = searchQuery.toLowerCase();
-    // Check Title, Content, Writer, or Recipient
-    const matchesSearch =
-      (letter.title && letter.title.toLowerCase().includes(query)) ||
-      (letter.content && letter.content.toLowerCase().includes(query)) ||
-      (letter.writerName && letter.writerName.toLowerCase().includes(query)) ||
-      (letter.recipientName &&
-        letter.recipientName.toLowerCase().includes(query));
 
-    // Check Category (Using Name or ID based on how you saved it)
-    // If categoryFilter prop is passed (e.g. "1"), we check against that.
-    // Note: In your DB you saved "categoryName", so we compare names or IDs depending on your preference.
-    // This simple check assumes selectedCategory matches the ID or Name stored.
+    // Safety checks in case fields are null
+    const t = letter.title ? letter.title.toLowerCase() : "";
+    const w = letter.writerName ? letter.writerName.toLowerCase() : "";
+    const r = letter.recipientName ? letter.recipientName.toLowerCase() : "";
+
+    const matchesSearch =
+      t.includes(query) || w.includes(query) || r.includes(query);
+
+    // Filter by Category Name (stored as string in DB) or ID
+    // Note: categoryFilter prop might be "1" (ID) or "Band" (Name) depending on your router
     const matchesCategory = selectedCategory
-      ? letter.categoryId === selectedCategory ||
-        letter.categoryName === selectedCategory
+      ? letter.categoryName === selectedCategory ||
+        letter.categoryId === selectedCategory
       : true;
 
     return matchesSearch && matchesCategory;
@@ -89,9 +104,7 @@ const Letters = ({ title, categoryFilter }) => {
 
   if (loading)
     return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>
-        Loading letters...
-      </div>
+      <div style={{ padding: "2rem", textAlign: "center" }}>Loading...</div>
     );
 
   return (
@@ -104,14 +117,14 @@ const Letters = ({ title, categoryFilter }) => {
         <div className="letter-type">
           <h2>List of {title}</h2>
 
-          {/* Only Admins see the "Add" button */}
+          {/* Admin Add Button */}
           {user && (
             <Link
               to="/add-letter"
               className="btn btn-primary"
               style={{ marginBottom: "20px", display: "inline-block" }}
             >
-              Add New Letter
+              + Add New Letter
             </Link>
           )}
 
@@ -122,15 +135,12 @@ const Letters = ({ title, categoryFilter }) => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-
-            {/* Dynamic Category Dropdown */}
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
               <option value="">All Categories</option>
               {categories.map((cat) => (
-                // value can be cat.id or cat.name depending on what you want to filter by
                 <option key={cat.id} value={cat.name}>
                   {cat.name}
                 </option>
@@ -145,39 +155,35 @@ const Letters = ({ title, categoryFilter }) => {
                   className="letter"
                   key={letter.id}
                   style={{
-                    border: "1px solid #eee",
-                    padding: "1rem",
-                    marginBottom: "1rem",
+                    border: "1px solid #ddd",
+                    padding: "15px",
+                    marginBottom: "15px",
                     borderRadius: "8px",
+                    background: "#fff",
                   }}
                 >
                   <h3>{letter.title}</h3>
-                  {/* Truncate content preview if it exists */}
-                  <p>
-                    {letter.content
-                      ? letter.content.substring(0, 100) + "..."
-                      : ""}
-                  </p>
+                  {/* Subtitles */}
+                  <div
+                    style={{
+                      fontSize: "0.9rem",
+                      color: "#555",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    <div>
+                      <strong>Writer:</strong> {letter.writerName}
+                    </div>
+                    <div>
+                      <strong>Recipient:</strong> {letter.recipientName}
+                    </div>
+                    <div>
+                      <strong>Category:</strong> {letter.categoryName}
+                    </div>
+                  </div>
 
-                  <h5>Writer: {letter.writerName}</h5>
-                  <h5>For: {letter.recipientName}</h5>
-                  <h5 style={{ color: "#666" }}>
-                    Category: {letter.categoryName}
-                  </h5>
-
-                  <div style={{ marginTop: "10px" }}>
-                    {/* Admin Actions */}
-                    {user && (
-                      <Link
-                        to={`/edit-letter/${letter.id}`}
-                        className="btn btn-secondary"
-                        style={{ marginRight: "10px" }}
-                      >
-                        Edit
-                      </Link>
-                    )}
-
-                    {/* Download Link (For Everyone) */}
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    {/* Download Button (Visible to All) */}
                     {letter.downloadUrl ? (
                       <a
                         href={letter.downloadUrl.toString()}
@@ -185,16 +191,38 @@ const Letters = ({ title, categoryFilter }) => {
                         rel="noreferrer"
                         className="btn btn-primary"
                       >
-                        Download File
+                        Download
                       </a>
                     ) : (
-                      <span style={{ color: "red" }}>File Unavailable</span>
+                      <button disabled className="btn btn-secondary">
+                        File Pending
+                      </button>
+                    )}
+
+                    {/* Admin Buttons (Delete/Edit) */}
+                    {user && (
+                      <>
+                        {/* You can add an Edit Link here later */}
+                        <button
+                          onClick={() => handleDelete(letter.id, letter.s3Key)}
+                          style={{
+                            padding: "8px 12px",
+                            backgroundColor: "#dc3545",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
               ))
             ) : (
-              <p>No letters found matching your search.</p>
+              <p>No letters found.</p>
             )}
           </div>
         </div>
