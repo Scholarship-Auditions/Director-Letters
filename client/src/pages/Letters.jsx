@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { generateClient } from "aws-amplify/data";
 import { getUrl, remove } from "aws-amplify/storage";
 import { useAuthenticator } from "@aws-amplify/ui-react";
-// 1. Import libraries for conversion
 import { asBlob } from "html-docx-js-typescript";
 import { saveAs } from "file-saver";
 
@@ -19,7 +18,6 @@ const Letters = ({ title, categoryFilter }) => {
     categoryFilter || ""
   );
   const [loading, setLoading] = useState(true);
-  // Track which letter is currently converting
   const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
@@ -37,7 +35,6 @@ const Letters = ({ title, categoryFilter }) => {
         letterData.map(async (letter) => {
           if (!letter.s3Key) return letter;
           try {
-            // Get the URL (valid for 1 hour)
             const link = await getUrl({ path: letter.s3Key });
             return { ...letter, downloadUrl: link.url };
           } catch (err) {
@@ -55,7 +52,7 @@ const Letters = ({ title, categoryFilter }) => {
     }
   };
 
-  // --- HTML to DOCX CONVERSION ---
+  // --- IMPROVED HTML to DOCX CONVERSION ---
   const handleDownloadDocx = async (letter) => {
     if (!letter.downloadUrl) return;
     setDownloadingId(letter.id);
@@ -63,38 +60,70 @@ const Letters = ({ title, categoryFilter }) => {
     try {
       // 1. Fetch the raw HTML content from S3
       const response = await fetch(letter.downloadUrl.toString());
-      const htmlContent = await response.text();
+      if (!response.ok) throw new Error("Failed to fetch file");
 
-      // 2. Wrap it in a basic HTML structure if needed for better formatting
-      const fullHtml = `
+      const rawHtml = await response.text();
+
+      // 2. PARSE THE HTML using the Browser's DOMParser
+      // This allows us to select specific elements like we do with document.getElementById
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(rawHtml, "text/html");
+
+      // 3. Extract the CSS Styles (Google Docs keeps them in <style> tags)
+      const styleTags = doc.querySelectorAll("style");
+      let combinedStyles = "";
+      styleTags.forEach((style) => {
+        combinedStyles += style.outerHTML;
+      });
+
+      // 4. Extract ONLY the content (Skip banners and scripts)
+      // Google Docs Published HTML puts content in <div id="contents">
+      let contentHtml = "";
+      const contentDiv = doc.getElementById("contents");
+
+      if (contentDiv) {
+        contentHtml = contentDiv.innerHTML;
+      } else {
+        // Fallback: If id="contents" isn't found, try to take the body but remove scripts
+        const scripts = doc.querySelectorAll("script");
+        scripts.forEach((script) => script.remove()); // Delete scripts
+        contentHtml = doc.body.innerHTML;
+      }
+
+      // 5. Reconstruct a Clean HTML string for the Converter
+      const cleanHtml = `
         <!DOCTYPE html>
         <html>
-          <head><meta charset="UTF-8"></head>
+          <head>
+            <meta charset="UTF-8">
+            ${combinedStyles} 
+            <style>
+               /* Add some default word doc overrides */
+               body { font-family: 'Times New Roman', serif; }
+               .doc-content { padding: 20px !important; } 
+            </style>
+          </head>
           <body>
-            <h1>${letter.title}</h1>
-            ${htmlContent}
+            ${contentHtml}
           </body>
         </html>
       `;
 
-      // 3. Convert to Blob (DOCX)
-      const buffer = await asBlob(fullHtml);
+      // 6. Convert to Blob (DOCX)
+      const buffer = await asBlob(cleanHtml, { orientation: "portrait" });
 
-      // 4. Trigger Download
+      // 7. Save File
       saveAs(buffer, `${letter.title}.docx`);
     } catch (error) {
       console.error("Conversion failed:", error);
-      alert("Failed to download DOCX. Please try viewing the file instead.");
+      alert("Could not convert file. Try using the View button instead.");
     } finally {
       setDownloadingId(null);
     }
   };
 
   const handleDelete = async (id, s3Key) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this letter?"
-    );
-    if (!confirmed) return;
+    if (!window.confirm("Are you sure you want to delete this letter?")) return;
 
     try {
       if (s3Key) await remove({ path: s3Key });
@@ -103,7 +132,7 @@ const Letters = ({ title, categoryFilter }) => {
       alert("Letter deleted.");
     } catch (error) {
       console.error("Delete failed:", error);
-      alert("Could not delete. Ensure you are logged in as an Admin.");
+      alert("Could not delete.");
     }
   };
 
@@ -111,10 +140,7 @@ const Letters = ({ title, categoryFilter }) => {
     const query = searchQuery.toLowerCase();
     const t = letter.title ? letter.title.toLowerCase() : "";
     const w = letter.writerName ? letter.writerName.toLowerCase() : "";
-    const r = letter.recipientName ? letter.recipientName.toLowerCase() : "";
-
-    const matchesSearch =
-      t.includes(query) || w.includes(query) || r.includes(query);
+    const matchesSearch = t.includes(query) || w.includes(query);
     const matchesCategory = selectedCategory
       ? letter.categoryName === selectedCategory ||
         letter.categoryId === selectedCategory
@@ -208,7 +234,6 @@ const Letters = ({ title, categoryFilter }) => {
                   >
                     {letter.downloadUrl ? (
                       <>
-                        {/* VIEW BUTTON: Opens HTML in new tab */}
                         <a
                           href={letter.downloadUrl.toString()}
                           target="_blank"
@@ -222,8 +247,6 @@ const Letters = ({ title, categoryFilter }) => {
                         >
                           View / Read
                         </a>
-
-                        {/* DOWNLOAD BUTTON: Converts to DOCX */}
                         <button
                           onClick={() => handleDownloadDocx(letter)}
                           disabled={downloadingId === letter.id}
