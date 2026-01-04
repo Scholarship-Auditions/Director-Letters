@@ -63,20 +63,20 @@ const Letters = ({ title, categoryFilter }) => {
     if (!confirmed) return;
 
     try {
-      // 1. Remove File from S3 (if key exists)
+      // 1. Remove File from S3
       if (s3Key) {
         await remove({ path: s3Key });
       }
 
       // 2. Remove Record from Database
-      await client.models.Letter.delete({ id });
+      // CRITICAL FIX: Add { authMode: 'userPool' } to prove you are an Admin
+      await client.models.Letter.delete({ id }, { authMode: "userPool" });
 
-      // 3. Update UI
       setLetters((prev) => prev.filter((item) => item.id !== id));
       alert("Letter deleted.");
     } catch (error) {
       console.error("Delete failed:", error);
-      alert("Could not delete. Check console for details.");
+      alert("Could not delete. Ensure you are logged in as an Admin.");
     }
   };
 
