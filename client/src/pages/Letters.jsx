@@ -3,12 +3,13 @@ import { Link } from "react-router-dom";
 import { generateClient } from "aws-amplify/data";
 import { getUrl, remove } from "aws-amplify/storage";
 import { useAuthenticator } from "@aws-amplify/ui-react";
+// 1. Import libraries for conversion
+import { asBlob } from "html-docx-js-typescript";
+import { saveAs } from "file-saver";
 
-// Generate client
 const client = generateClient();
 
 const Letters = ({ title, categoryFilter }) => {
-  // 1. Get User Auth Status
   const { user } = useAuthenticator((context) => [context.user]);
 
   const [letters, setLetters] = useState([]);
@@ -18,6 +19,8 @@ const Letters = ({ title, categoryFilter }) => {
     categoryFilter || ""
   );
   const [loading, setLoading] = useState(true);
+  // Track which letter is currently converting
+  const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -25,22 +28,19 @@ const Letters = ({ title, categoryFilter }) => {
 
   const fetchData = async () => {
     try {
-      // A. Fetch Categories
       const { data: catData } = await client.models.LetterCategory.list();
       setCategories(catData);
 
-      // B. Fetch Letters
       const { data: letterData } = await client.models.Letter.list();
 
-      // C. Generate Signed URLs for downloads
       const lettersWithUrls = await Promise.all(
         letterData.map(async (letter) => {
           if (!letter.s3Key) return letter;
           try {
+            // Get the URL (valid for 1 hour)
             const link = await getUrl({ path: letter.s3Key });
             return { ...letter, downloadUrl: link.url };
           } catch (err) {
-            // This catches the "NoBucket" error if config is still bad
             console.error("Error getting URL for:", letter.title, err);
             return letter;
           }
@@ -55,7 +55,41 @@ const Letters = ({ title, categoryFilter }) => {
     }
   };
 
-  // --- NEW: DELETE FUNCTION ---
+  // --- HTML to DOCX CONVERSION ---
+  const handleDownloadDocx = async (letter) => {
+    if (!letter.downloadUrl) return;
+    setDownloadingId(letter.id);
+
+    try {
+      // 1. Fetch the raw HTML content from S3
+      const response = await fetch(letter.downloadUrl.toString());
+      const htmlContent = await response.text();
+
+      // 2. Wrap it in a basic HTML structure if needed for better formatting
+      const fullHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head><meta charset="UTF-8"></head>
+          <body>
+            <h1>${letter.title}</h1>
+            ${htmlContent}
+          </body>
+        </html>
+      `;
+
+      // 3. Convert to Blob (DOCX)
+      const buffer = await asBlob(fullHtml);
+
+      // 4. Trigger Download
+      saveAs(buffer, `${letter.title}.docx`);
+    } catch (error) {
+      console.error("Conversion failed:", error);
+      alert("Failed to download DOCX. Please try viewing the file instead.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   const handleDelete = async (id, s3Key) => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this letter?"
@@ -63,15 +97,8 @@ const Letters = ({ title, categoryFilter }) => {
     if (!confirmed) return;
 
     try {
-      // 1. Remove File from S3
-      if (s3Key) {
-        await remove({ path: s3Key });
-      }
-
-      // 2. Remove Record from Database
-      // CRITICAL FIX: Add { authMode: 'userPool' } to prove you are an Admin
+      if (s3Key) await remove({ path: s3Key });
       await client.models.Letter.delete({ id }, { authMode: "userPool" });
-
       setLetters((prev) => prev.filter((item) => item.id !== id));
       alert("Letter deleted.");
     } catch (error) {
@@ -80,20 +107,14 @@ const Letters = ({ title, categoryFilter }) => {
     }
   };
 
-  // Filter Logic
   const filteredLetters = letters.filter((letter) => {
     const query = searchQuery.toLowerCase();
-
-    // Safety checks in case fields are null
     const t = letter.title ? letter.title.toLowerCase() : "";
     const w = letter.writerName ? letter.writerName.toLowerCase() : "";
     const r = letter.recipientName ? letter.recipientName.toLowerCase() : "";
 
     const matchesSearch =
       t.includes(query) || w.includes(query) || r.includes(query);
-
-    // Filter by Category Name (stored as string in DB) or ID
-    // Note: categoryFilter prop might be "1" (ID) or "Band" (Name) depending on your router
     const matchesCategory = selectedCategory
       ? letter.categoryName === selectedCategory ||
         letter.categoryId === selectedCategory
@@ -104,7 +125,9 @@ const Letters = ({ title, categoryFilter }) => {
 
   if (loading)
     return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>Loading...</div>
+      <div style={{ padding: "2rem", textAlign: "center" }}>
+        Loading letters...
+      </div>
     );
 
   return (
@@ -117,7 +140,6 @@ const Letters = ({ title, categoryFilter }) => {
         <div className="letter-type">
           <h2>List of {title}</h2>
 
-          {/* Admin Add Button */}
           {user && (
             <Link
               to="/add-letter"
@@ -163,7 +185,6 @@ const Letters = ({ title, categoryFilter }) => {
                   }}
                 >
                   <h3>{letter.title}</h3>
-                  {/* Subtitles */}
                   <div
                     style={{
                       fontSize: "0.9rem",
@@ -182,41 +203,61 @@ const Letters = ({ title, categoryFilter }) => {
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", gap: "10px" }}>
-                    {/* Download Button (Visible to All) */}
+                  <div
+                    style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}
+                  >
                     {letter.downloadUrl ? (
-                      <a
-                        href={letter.downloadUrl.toString()}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-primary"
-                      >
-                        Download
-                      </a>
+                      <>
+                        {/* VIEW BUTTON: Opens HTML in new tab */}
+                        <a
+                          href={letter.downloadUrl.toString()}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn btn-secondary"
+                          style={{
+                            textDecoration: "none",
+                            backgroundColor: "#28a745",
+                            color: "white",
+                          }}
+                        >
+                          View / Read
+                        </a>
+
+                        {/* DOWNLOAD BUTTON: Converts to DOCX */}
+                        <button
+                          onClick={() => handleDownloadDocx(letter)}
+                          disabled={downloadingId === letter.id}
+                          className="btn btn-primary"
+                          style={{
+                            cursor:
+                              downloadingId === letter.id ? "wait" : "pointer",
+                          }}
+                        >
+                          {downloadingId === letter.id
+                            ? "Converting..."
+                            : "Download DOCX"}
+                        </button>
+                      </>
                     ) : (
                       <button disabled className="btn btn-secondary">
                         File Pending
                       </button>
                     )}
 
-                    {/* Admin Buttons (Delete/Edit) */}
                     {user && (
-                      <>
-                        {/* You can add an Edit Link here later */}
-                        <button
-                          onClick={() => handleDelete(letter.id, letter.s3Key)}
-                          style={{
-                            padding: "8px 12px",
-                            backgroundColor: "#dc3545",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </>
+                      <button
+                        onClick={() => handleDelete(letter.id, letter.s3Key)}
+                        style={{
+                          padding: "8px 12px",
+                          backgroundColor: "#dc3545",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Delete
+                      </button>
                     )}
                   </div>
                 </div>

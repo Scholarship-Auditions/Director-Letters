@@ -26,7 +26,6 @@ function AddLetter() {
 
   const [loading, setLoading] = useState(false);
 
-  // 1. Fetch Dropdown Options on Load
   useEffect(() => {
     const fetchOptions = async () => {
       try {
@@ -62,12 +61,11 @@ function AddLetter() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.file) return alert("Please upload a file");
+    if (!formData.file) return alert("Please upload an HTML file");
 
     setLoading(true);
 
     try {
-      // Find the selected names based on IDs
       const writerObj = formOptions.letterwriters.find(
         (item) => item.id === formData.writer
       );
@@ -78,17 +76,18 @@ function AddLetter() {
         (item) => item.id === formData.category
       );
 
-      // 1. Upload File to S3
-      // We manually set the path to 'letters/' to match your storage settings
+      // 1. Upload File to S3 (Changed to ensure it treats it as HTML)
       const fileKey = `letters/${Date.now()}-${formData.file.name}`;
 
       await uploadData({
         path: fileKey,
         data: formData.file,
+        options: {
+          contentType: "text/html", // Explicitly set content type so browsers render it
+        },
       }).result;
 
       // 2. Create Record in Database
-      // CRITICAL FIX: We add { authMode: 'userPool' } to ensure you have permission to write
       await client.models.Letter.create(
         {
           title: formData.title,
@@ -98,7 +97,7 @@ function AddLetter() {
           recipientName: recipientObj?.name ?? "Unknown",
           categoryId: formData.category,
           categoryName: categoryObj?.name ?? "Unknown",
-          content: "", // Placeholder content
+          content: "HTML Letter",
           s3Key: fileKey,
         },
         { authMode: "userPool" }
@@ -114,10 +113,7 @@ function AddLetter() {
     }
   };
 
-  // Redirect if not logged in
-  if (!user) {
-    return <div style={{ padding: "2rem" }}>Access Denied. Please Log In.</div>;
-  }
+  if (!user) return <div style={{ padding: "2rem" }}>Access Denied.</div>;
 
   return (
     <div style={{ padding: "2rem", maxWidth: "600px", margin: "0 auto" }}>
@@ -200,13 +196,14 @@ function AddLetter() {
 
         <div>
           <label style={{ display: "block", marginBottom: "5px" }}>
-            Upload .docx File
+            Upload .html File
           </label>
+          {/* CHANGED: accept .html */}
           <input
             type="file"
             name="file"
             onChange={handleFileChange}
-            accept=".docx"
+            accept=".html,.htm"
             required
           />
         </div>
