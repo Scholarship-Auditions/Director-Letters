@@ -1,28 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { generateClient } from "aws-amplify/data";
-import { getUrl, remove } from "aws-amplify/storage";
-import { useAuthenticator } from "@aws-amplify/ui-react";
-import { asBlob } from "html-docx-js-typescript";
-import { saveAs } from "file-saver";
+import "../styles/Letters.css";
 
 const client = generateClient();
 
 const Letters = ({ title, categoryFilter }) => {
-  const { user } = useAuthenticator((context) => [context.user]);
-
   const [letters, setLetters] = useState([]);
   const [categories, setCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(
-    categoryFilter || ""
-  );
+  const [selectedCategory, setSelectedCategory] = useState(categoryFilter || "");
   const [loading, setLoading] = useState(true);
-  const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // When categoryFilter prop changes (e.g., navigating to a specific category page)
+  useEffect(() => {
+    if (categoryFilter) {
+      setSelectedCategory(categoryFilter);
+    } else {
+      setSelectedCategory("");
+    }
+  }, [categoryFilter]);
 
   const fetchData = async () => {
     try {
@@ -30,109 +31,11 @@ const Letters = ({ title, categoryFilter }) => {
       setCategories(catData);
 
       const { data: letterData } = await client.models.Letter.list();
-
-      const lettersWithUrls = await Promise.all(
-        letterData.map(async (letter) => {
-          if (!letter.s3Key) return letter;
-          try {
-            const link = await getUrl({ path: letter.s3Key });
-            return { ...letter, downloadUrl: link.url };
-          } catch (err) {
-            console.error("Error getting URL for:", letter.title, err);
-            return letter;
-          }
-        })
-      );
-
-      setLetters(lettersWithUrls);
+      setLetters(letterData || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // --- IMPROVED HTML to DOCX CONVERSION ---
-  const handleDownloadDocx = async (letter) => {
-    if (!letter.downloadUrl) return;
-    setDownloadingId(letter.id);
-
-    try {
-      // 1. Fetch the raw HTML content from S3
-      const response = await fetch(letter.downloadUrl.toString());
-      if (!response.ok) throw new Error("Failed to fetch file");
-
-      const rawHtml = await response.text();
-
-      // 2. PARSE THE HTML using the Browser's DOMParser
-      // This allows us to select specific elements like we do with document.getElementById
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(rawHtml, "text/html");
-
-      // 3. Extract the CSS Styles (Google Docs keeps them in <style> tags)
-      const styleTags = doc.querySelectorAll("style");
-      let combinedStyles = "";
-      styleTags.forEach((style) => {
-        combinedStyles += style.outerHTML;
-      });
-
-      // 4. Extract ONLY the content (Skip banners and scripts)
-      // Google Docs Published HTML puts content in <div id="contents">
-      let contentHtml = "";
-      const contentDiv = doc.getElementById("contents");
-
-      if (contentDiv) {
-        contentHtml = contentDiv.innerHTML;
-      } else {
-        // Fallback: If id="contents" isn't found, try to take the body but remove scripts
-        const scripts = doc.querySelectorAll("script");
-        scripts.forEach((script) => script.remove()); // Delete scripts
-        contentHtml = doc.body.innerHTML;
-      }
-
-      // 5. Reconstruct a Clean HTML string for the Converter
-      const cleanHtml = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="UTF-8">
-            ${combinedStyles} 
-            <style>
-               /* Add some default word doc overrides */
-               body { font-family: 'Times New Roman', serif; }
-               .doc-content { padding: 20px !important; } 
-            </style>
-          </head>
-          <body>
-            ${contentHtml}
-          </body>
-        </html>
-      `;
-
-      // 6. Convert to Blob (DOCX)
-      const buffer = await asBlob(cleanHtml, { orientation: "portrait" });
-
-      // 7. Save File
-      saveAs(buffer, `${letter.title}.docx`);
-    } catch (error) {
-      console.error("Conversion failed:", error);
-      alert("Could not convert file. Try using the View button instead.");
-    } finally {
-      setDownloadingId(null);
-    }
-  };
-
-  const handleDelete = async (id, s3Key) => {
-    if (!window.confirm("Are you sure you want to delete this letter?")) return;
-
-    try {
-      if (s3Key) await remove({ path: s3Key });
-      await client.models.Letter.delete({ id }, { authMode: "userPool" });
-      setLetters((prev) => prev.filter((item) => item.id !== id));
-      alert("Letter deleted.");
-    } catch (error) {
-      console.error("Delete failed:", error);
-      alert("Could not delete.");
     }
   };
 
@@ -141,155 +44,101 @@ const Letters = ({ title, categoryFilter }) => {
     const t = letter.title ? letter.title.toLowerCase() : "";
     const w = letter.writerName ? letter.writerName.toLowerCase() : "";
     const matchesSearch = t.includes(query) || w.includes(query);
+
+    // Match by category name or ID
     const matchesCategory = selectedCategory
-      ? letter.categoryName === selectedCategory ||
-      letter.categoryId === selectedCategory
+      ? letter.categoryName === selectedCategory || letter.categoryId === selectedCategory
       : true;
 
     return matchesSearch && matchesCategory;
   });
 
-  if (loading)
+  if (loading) {
     return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>
-        Loading letters...
+      <div className="letters-page">
+        <section className="letters-hero">
+          <h1 className="letters-hero-title">{title}</h1>
+        </section>
+        <div className="letters-content">
+          <div className="letters-loading">Loading letters...</div>
+        </div>
       </div>
     );
+  }
 
   return (
-    <main className="letters-container">
+    <div className="letters-page">
+      {/* Hero Section */}
       <section className="letters-hero">
         <h1 className="letters-hero-title">{title}</h1>
+        <p className="letters-hero-subtitle">
+          Browse our collection of director letters
+        </p>
       </section>
 
-      <section className="letters-section">
-        <div className="letter-type">
-          <h2>List of {title}</h2>
-
-          {user && (
-            <Link
-              to="/add-letter"
-              className="btn btn-primary"
-              style={{ marginBottom: "20px", display: "inline-block" }}
-            >
-              + Add New Letter
-            </Link>
-          )}
-
-          <div className="search-form">
+      {/* Main Content */}
+      <div className="letters-content">
+        {/* Search and Filter Bar */}
+        <div className="letters-filters">
+          <div className="letters-search">
             <input
               type="text"
-              placeholder="Search letters..."
+              placeholder="Search by title or writer..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="">All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
           </div>
-
-          <div className="letters">
-            {filteredLetters.length > 0 ? (
-              filteredLetters.map((letter) => (
-                <div
-                  className="letter"
-                  key={letter.id}
-                  style={{
-                    border: "1px solid #ddd",
-                    padding: "15px",
-                    marginBottom: "15px",
-                    borderRadius: "8px",
-                    background: "#fff",
-                  }}
-                >
-                  <h3>{letter.title}</h3>
-                  <div
-                    style={{
-                      fontSize: "0.9rem",
-                      color: "#555",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    <div>
-                      <strong>Writer:</strong> {letter.writerName}
-                    </div>
-                    <div>
-                      <strong>Recipient:</strong> {letter.recipientName}
-                    </div>
-                    <div>
-                      <strong>Category:</strong> {letter.categoryName}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}
-                  >
-                    {/* View Letter Button - links to new 2-column layout */}
-                    <Link
-                      to={`/letter/${letter.id}`}
-                      className="btn btn-primary"
-                      style={{
-                        textDecoration: "none",
-                        backgroundColor: "#6366f1",
-                        color: "white",
-                        padding: "8px 16px",
-                        borderRadius: "4px",
-                      }}
-                    >
-                      View Letter
-                    </Link>
-
-                    {letter.downloadUrl && (
-                      <button
-                        onClick={() => handleDownloadDocx(letter)}
-                        disabled={downloadingId === letter.id}
-                        className="btn btn-secondary"
-                        style={{
-                          cursor:
-                            downloadingId === letter.id ? "wait" : "pointer",
-                          backgroundColor: "#28a745",
-                          color: "white",
-                        }}
-                      >
-                        {downloadingId === letter.id
-                          ? "Converting..."
-                          : "Download DOCX"}
-                      </button>
-                    )}
-
-                    {user && (
-                      <button
-                        onClick={() => handleDelete(letter.id, letter.s3Key)}
-                        style={{
-                          padding: "8px 12px",
-                          backgroundColor: "#dc3545",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p>No letters found.</p>
-            )}
-          </div>
+          {!categoryFilter && (
+            <div className="letters-category-filter">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
-      </section>
-    </main>
+
+        {/* Results Count */}
+        <p className="letters-count">
+          {filteredLetters.length} letter{filteredLetters.length !== 1 ? "s" : ""} found
+        </p>
+
+        {/* Letters Grid */}
+        {filteredLetters.length > 0 ? (
+          <div className="letters-grid">
+            {filteredLetters.map((letter) => (
+              <article key={letter.id} className="letter-card">
+                <span className="letter-card-category">
+                  {letter.categoryName}
+                </span>
+                <h3 className="letter-card-title">{letter.title}</h3>
+                <div className="letter-card-meta">
+                  <span>By: {letter.writerName}</span>
+                  <span>To: {letter.recipientName}</span>
+                </div>
+                <div className="letter-card-actions">
+                  <Link to={`/letter/${letter.id}`} className="letter-view-btn">
+                    View Letter →
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="letters-empty">
+            <h3>No letters found</h3>
+            <p>Try adjusting your search or filter criteria.</p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

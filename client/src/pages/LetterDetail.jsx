@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getUrl } from "aws-amplify/storage";
 import { dataClient, authModes } from "../lib/dataClient";
+import { asBlob } from "html-docx-js-typescript";
+import { saveAs } from "file-saver";
 import "../styles/LetterDetail.css";
 
 function LetterDetail() {
@@ -10,7 +12,7 @@ function LetterDetail() {
   const [loading, setLoading] = useState(true);
   const [sidebarImageUrl, setSidebarImageUrl] = useState(null);
   const [copied, setCopied] = useState(false);
-  const emailContentRef = useRef(null);
+  const [downloading, setDownloading] = useState(null);
 
   useEffect(() => {
     const fetchLetter = async () => {
@@ -43,7 +45,6 @@ function LetterDetail() {
 
   const handleCopyEmail = async () => {
     try {
-      // Get plain text from the email content
       const tempDiv = document.createElement("div");
       tempDiv.innerHTML = letter.emailContent || "";
       const plainText = tempDiv.textContent || tempDiv.innerText || "";
@@ -53,6 +54,106 @@ function LetterDetail() {
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
+    }
+  };
+
+  const handleDownloadDocx = async () => {
+    if (!letter?.emailContent) return;
+    setDownloading("docx");
+
+    try {
+      // Build clean HTML for conversion
+      const cleanHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              body { font-family: 'Times New Roman', serif; padding: 20px; }
+              h1 { font-size: 24px; margin-bottom: 20px; }
+            </style>
+          </head>
+          <body>
+            <h1>${letter.title}</h1>
+            ${letter.emailContent}
+          </body>
+        </html>
+      `;
+
+      const buffer = await asBlob(cleanHtml, { orientation: "portrait" });
+      saveAs(buffer, `${letter.title}.docx`);
+    } catch (error) {
+      console.error("DOCX conversion failed:", error);
+      alert("Could not generate DOCX file.");
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    if (!letter?.emailContent) return;
+    setDownloading("pdf");
+
+    try {
+      // Create a printable version and use browser's print to PDF
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        alert("Please allow popups to download PDF.");
+        setDownloading(null);
+        return;
+      }
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>${letter.title}</title>
+            <style>
+              body { 
+                font-family: 'Times New Roman', serif; 
+                padding: 40px; 
+                line-height: 1.6;
+              }
+              h1 { 
+                font-size: 24px; 
+                margin-bottom: 20px;
+                border-bottom: 2px solid #333;
+                padding-bottom: 10px;
+              }
+              .meta {
+                color: #666;
+                font-size: 14px;
+                margin-bottom: 20px;
+              }
+              @media print {
+                body { padding: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            <h1>${letter.title}</h1>
+            <div class="meta">
+              <strong>Category:</strong> ${letter.categoryName} | 
+              <strong>Writer:</strong> ${letter.writerName} | 
+              <strong>Recipient:</strong> ${letter.recipientName}
+            </div>
+            ${letter.emailContent}
+          </body>
+        </html>
+      `);
+
+      printWindow.document.close();
+      printWindow.focus();
+
+      // Trigger print dialog after brief delay
+      setTimeout(() => {
+        printWindow.print();
+        setDownloading(null);
+      }, 500);
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+      setDownloading(null);
     }
   };
 
@@ -141,21 +242,39 @@ function LetterDetail() {
             <h1 className="letter-title">{letter.title}</h1>
 
             <div
-              ref={emailContentRef}
               className="email-content"
               dangerouslySetInnerHTML={{ __html: letter.emailContent || "" }}
             />
 
-            {letter.emailContent && (
-              <div className="copy-button-container">
+            {/* Action Buttons Section */}
+            <div className="letter-actions">
+              <div className="letter-actions-left">
+                {letter.emailContent && (
+                  <button
+                    onClick={handleCopyEmail}
+                    className={`action-button copy-btn ${copied ? "copied" : ""}`}
+                  >
+                    {copied ? "✓ Copied!" : "📋 Copy Text"}
+                  </button>
+                )}
+              </div>
+              <div className="letter-actions-right">
                 <button
-                  onClick={handleCopyEmail}
-                  className={`copy-button ${copied ? "copied" : ""}`}
+                  onClick={handleDownloadDocx}
+                  disabled={downloading === "docx"}
+                  className="action-button download-btn docx-btn"
                 >
-                  {copied ? "✓ Copied!" : "📋 Copy Email Text"}
+                  {downloading === "docx" ? "Converting..." : "📄 Download DOCX"}
+                </button>
+                <button
+                  onClick={handleDownloadPdf}
+                  disabled={downloading === "pdf"}
+                  className="action-button download-btn pdf-btn"
+                >
+                  {downloading === "pdf" ? "Generating..." : "📑 Download PDF"}
                 </button>
               </div>
-            )}
+            </div>
           </main>
         </div>
       </div>

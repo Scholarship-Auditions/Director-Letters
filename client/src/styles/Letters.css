@@ -1,0 +1,208 @@
+/* Letters Page Styles */
+.letters-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+/* Hero Section */
+.letters-hero {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.letters-hero-title {
+    color: #fff;
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.letters-hero-subtitle {
+    color: #94a3b8;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+}
+
+/* Main Content */
+.letters-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Search and Filter Bar */
+.letters-filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.letters-search {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+}
+
+.letters-search input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 2.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1rem;
+    background: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.letters-search input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.letters-search::before {
+    content: "🔍";
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+}
+
+.letters-category-filter {
+    min-width: 180px;
+}
+
+.letters-category-filter select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1rem;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.letters-category-filter select:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+/* Letters Grid */
+.letters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Letter Card */
+.letter-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.letter-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.letter-card-category {
+    display: inline-block;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    margin-bottom: 0.75rem;
+    width: fit-content;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.letter-card-title {
+    color: #1e293b;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.4;
+}
+
+.letter-card-meta {
+    color: #64748b;
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.letter-card-meta span {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.letter-card-actions {
+    margin-top: auto;
+}
+
+.letter-view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.letter-view-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+/* Empty State */
+.letters-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.letters-empty h3 {
+    color: #1e293b;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.letters-empty p {
+    color: #64748b;
+    font-size: 1rem;
+}
+
+/* Loading State */
+.letters-loading {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #64748b;
+    font-size: 1rem;
+}
+
+/* Results Count */
+.letters-count {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
