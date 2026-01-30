@@ -8,6 +8,9 @@
 .letter-detail-container {
     max-width: 1200px;
     margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .letter-detail-header {
@@ -48,8 +51,9 @@
 /* Main Layout */
 .letter-detail-layout {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 280px minmax(0, 1fr);
     gap: 2rem;
+    width: 100%;
 }
 
 @media (max-width: 900px) {
@@ -137,6 +141,8 @@
     padding: 2rem;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     border: 1px solid rgba(0, 0, 0, 0.05);
+    min-width: 0;
+    overflow: hidden;
 }
 
 .letter-title {
@@ -152,6 +158,9 @@
     color: #334155;
     font-size: 1rem;
     line-height: 1.8;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .email-content p {
