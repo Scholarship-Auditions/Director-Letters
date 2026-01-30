@@ -35,19 +35,25 @@ const schema = a.schema({
   Letter: a
     .model({
       title: a.string().required(),
-      content: a.string(),
 
-      // Storing IDs and Names for easier display
+      // Email Section
+      emailContent: a.string(),           // Rich HTML from Quill
+
+      // Sidebar - Image Section
+      sidebarImage: a.string(),            // S3 key for uploaded image
+      sidebarLinkText: a.string(),         // Text displayed for the link
+      sidebarLinkUrl: a.string(),          // URL the link points to
+
+      // Sidebar - Poem Section
+      poemContent: a.string(),             // Rich HTML from Quill
+
+      // Filtering fields
       writerId: a.string().required(),
       writerName: a.string().required(),
-
       recipientId: a.string().required(),
       recipientName: a.string().required(),
-
       categoryId: a.string().required(),
       categoryName: a.string().required(),
-
-      s3Key: a.string(),
     })
     .authorization((allow) => [
       allow.publicApiKey().to(["read"]), // ✅ Public needs to READ letters too!

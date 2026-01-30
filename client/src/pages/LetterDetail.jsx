@@ -1,65 +1,164 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { authModes, dataClient, buildSignedLetterUrl } from "../lib/dataClient";
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, Link } from "react-router-dom";
+import { getUrl } from "aws-amplify/storage";
+import { dataClient, authModes } from "../lib/dataClient";
+import "../styles/LetterDetail.css";
 
 function LetterDetail() {
-  const [letter, setLetter] = useState(null);
   const { id } = useParams();
-  const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const [letter, setLetter] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [sidebarImageUrl, setSidebarImageUrl] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const emailContentRef = useRef(null);
 
   useEffect(() => {
     const fetchLetter = async () => {
       try {
-        const { data } = await dataClient.models.Letter.get({ id });
-        if (!data) {
-          setLetter(null);
-          return;
+        setLoading(true);
+        const { data } = await dataClient.models.Letter.get({ id }, authModes.read);
+
+        if (data) {
+          setLetter(data);
+
+          // Get signed URL for sidebar image if exists
+          if (data.sidebarImage) {
+            try {
+              const { url } = await getUrl({ path: data.sidebarImage });
+              setSidebarImageUrl(url.toString());
+            } catch (imgErr) {
+              console.error("Failed to load sidebar image:", imgErr);
+            }
+          }
         }
-
-        const s3Url = await buildSignedLetterUrl(data.s3Key);
-
-        setLetter({ ...data, s3_url: s3Url });
       } catch (error) {
-        console.error('Failed to fetch letter:', error);
+        console.error("Failed to fetch letter:", error);
+      } finally {
+        setLoading(false);
       }
     };
+
     fetchLetter();
   }, [id]);
 
-  const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this letter?')) {
-      try {
-        await dataClient.models.Letter.delete({ id }, authModes.write);
-        navigate('/letters');
-      } catch (error) {
-        console.error('Failed to delete letter:', error);
-      }
+  const handleCopyEmail = async () => {
+    try {
+      // Get plain text from the email content
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = letter.emailContent || "";
+      const plainText = tempDiv.textContent || tempDiv.innerText || "";
+
+      await navigator.clipboard.writeText(plainText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="letter-detail-wrapper">
+        <div className="letter-detail-container">
+          <div className="letter-loading">Loading letter...</div>
+        </div>
+      </div>
+    );
+  }
+
   if (!letter) {
-    return <div>Loading...</div>;
+    return (
+      <div className="letter-detail-wrapper">
+        <div className="letter-detail-container">
+          <div className="letter-not-found">
+            <h2>Letter Not Found</h2>
+            <p>The letter you're looking for doesn't exist.</p>
+            <Link to="/letters" className="sidebar-link">
+              ← Back to Letters
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <h1>{letter.title}</h1>
-      <div dangerouslySetInnerHTML={{ __html: letter.content }} />
-      {letter.s3_url && (
-        <p>
-          <a href={letter.s3_url} download>
-            Download original HTML
-          </a>
-        </p>
-      )}
-      {isAuthenticated && (
-        <>
-          <Link to={`/letters/${id}/edit`}>Edit</Link>
-          <button onClick={handleDelete}>Delete</button>
-        </>
-      )}
+    <div className="letter-detail-wrapper">
+      <div className="letter-detail-container">
+        {/* Header */}
+        <header className="letter-detail-header">
+          <Link to="/letters" className="back-link">
+            ← Back to Letters
+          </Link>
+          <div className="letter-meta">
+            <span className="badge">{letter.categoryName}</span>
+            <span className="badge">{letter.writerName}</span>
+            <span className="badge">To: {letter.recipientName}</span>
+          </div>
+        </header>
+
+        {/* Main Layout */}
+        <div className="letter-detail-layout">
+          {/* Left Sidebar */}
+          <aside className="letter-sidebar">
+            {/* Image Section */}
+            {(sidebarImageUrl || letter.sidebarLinkUrl) && (
+              <div className="sidebar-card sidebar-image-section">
+                {sidebarImageUrl && (
+                  <img
+                    src={sidebarImageUrl}
+                    alt="Sponsor"
+                    className="sidebar-image"
+                  />
+                )}
+                {letter.sidebarLinkUrl && (
+                  <a
+                    href={letter.sidebarLinkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sidebar-link"
+                  >
+                    {letter.sidebarLinkText || "Visit Website"} →
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Poem Section */}
+            {letter.poemContent && (
+              <div className="sidebar-card sidebar-poem-section">
+                <h3>Poem</h3>
+                <div
+                  className="poem-content"
+                  dangerouslySetInnerHTML={{ __html: letter.poemContent }}
+                />
+              </div>
+            )}
+          </aside>
+
+          {/* Main Content */}
+          <main className="letter-main-content">
+            <h1 className="letter-title">{letter.title}</h1>
+
+            <div
+              ref={emailContentRef}
+              className="email-content"
+              dangerouslySetInnerHTML={{ __html: letter.emailContent || "" }}
+            />
+
+            {letter.emailContent && (
+              <div className="copy-button-container">
+                <button
+                  onClick={handleCopyEmail}
+                  className={`copy-button ${copied ? "copied" : ""}`}
+                >
+                  {copied ? "✓ Copied!" : "📋 Copy Email Text"}
+                </button>
+              </div>
+            )}
+          </main>
+        </div>
+      </div>
     </div>
   );
 }

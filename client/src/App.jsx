@@ -6,9 +6,10 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Letters from "./pages/Letters";
 import Login from "./pages/Login";
-import AddLetter from "./pages/AddLetter";
 import AdminDashboard from "./pages/AdminDashboard";
-// import Register from './pages/Register'; // <-- DELETE THIS LINE
+import ContentEditor from "./pages/ContentEditor";
+import ManageLetters from "./pages/ManageLetters";
+import LetterDetail from "./pages/LetterDetail";
 import "./styles/home-styles.css";
 
 function App() {
@@ -52,8 +53,8 @@ function App() {
           {/* The Login page will now handle both Login and Register */}
           <Route path="login" element={<Login />} />
 
-          {/* DELETE THE REGISTER ROUTE BELOW */}
-          {/* <Route path="register" element={<Register />} /> */}
+          {/* Letter Detail View */}
+          <Route path="letter/:id" element={<LetterDetail />} />
 
           <Route
             path="*"
@@ -65,11 +66,15 @@ function App() {
           />
         </Route>
 
+        {/* Admin Routes */}
         <Route path="admin" element={<AdminDashboard />} />
-        <Route path="add-letter" element={<AddLetter />} />
+        <Route path="content-editor" element={<ContentEditor />} />
+        <Route path="content-editor/:id" element={<ContentEditor />} />
+        <Route path="manage-letters" element={<ManageLetters />} />
       </Routes>
     </BrowserRouter>
   );
 }
 
 export default App;
+

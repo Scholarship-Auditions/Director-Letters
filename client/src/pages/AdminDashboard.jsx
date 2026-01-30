@@ -200,8 +200,11 @@ const AdminDashboard = () => {
                 </p>
               </div>
               <div className="admin-header-actions">
-                <Link to="/add-letter" className="primary-button">
-                  Upload a letter
+                <Link to="/content-editor" className="primary-button">
+                  Create Letter
+                </Link>
+                <Link to="/manage-letters" className="secondary-button">
+                  Manage Letters
                 </Link>
                 <button type="button" className="secondary-button" onClick={signOut}>
                   Sign out
@@ -269,44 +272,44 @@ const AdminDashboard = () => {
                     type="button"
                     className="secondary-button"
                     onClick={() => setFormValues(initialForm)}
-                  disabled={isSaving}
-                >
-                  Clear
-                </button>
-              </div>
-            </form>
+                    disabled={isSaving}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </form>
 
-            {editSelection && (
-              <div className="admin-form edit-form">
-                <div className="admin-field">
-                  <span>Editing {optionConfig[editSelection.type]?.label}</span>
-                  <input
-                    type="text"
-                    value={editSelection.newName}
-                    onChange={handleEditChange}
-                    placeholder={`Rename ${editSelection.currentName}`}
-                  />
+              {editSelection && (
+                <div className="admin-form edit-form">
+                  <div className="admin-field">
+                    <span>Editing {optionConfig[editSelection.type]?.label}</span>
+                    <input
+                      type="text"
+                      value={editSelection.newName}
+                      onChange={handleEditChange}
+                      placeholder={`Rename ${editSelection.currentName}`}
+                    />
+                  </div>
+                  <div className="admin-actions">
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={handleEditSubmit}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? "Saving..." : "Save edit"}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => setEditSelection(null)}
+                      disabled={isSaving}
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-                <div className="admin-actions">
-                  <button
-                    type="button"
-                    className="primary-button"
-                    onClick={handleEditSubmit}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? "Saving..." : "Save edit"}
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => setEditSelection(null)}
-                    disabled={isSaving}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
+              )}
             </section>
           </div>
         )}

@@ -143,7 +143,7 @@ const Letters = ({ title, categoryFilter }) => {
     const matchesSearch = t.includes(query) || w.includes(query);
     const matchesCategory = selectedCategory
       ? letter.categoryName === selectedCategory ||
-        letter.categoryId === selectedCategory
+      letter.categoryId === selectedCategory
       : true;
 
     return matchesSearch && matchesCategory;
@@ -232,38 +232,36 @@ const Letters = ({ title, categoryFilter }) => {
                   <div
                     style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}
                   >
-                    {letter.downloadUrl ? (
-                      <>
-                        <a
-                          href={letter.downloadUrl.toString()}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="btn btn-secondary"
-                          style={{
-                            textDecoration: "none",
-                            backgroundColor: "#28a745",
-                            color: "white",
-                          }}
-                        >
-                          View / Read
-                        </a>
-                        <button
-                          onClick={() => handleDownloadDocx(letter)}
-                          disabled={downloadingId === letter.id}
-                          className="btn btn-primary"
-                          style={{
-                            cursor:
-                              downloadingId === letter.id ? "wait" : "pointer",
-                          }}
-                        >
-                          {downloadingId === letter.id
-                            ? "Converting..."
-                            : "Download DOCX"}
-                        </button>
-                      </>
-                    ) : (
-                      <button disabled className="btn btn-secondary">
-                        File Pending
+                    {/* View Letter Button - links to new 2-column layout */}
+                    <Link
+                      to={`/letter/${letter.id}`}
+                      className="btn btn-primary"
+                      style={{
+                        textDecoration: "none",
+                        backgroundColor: "#6366f1",
+                        color: "white",
+                        padding: "8px 16px",
+                        borderRadius: "4px",
+                      }}
+                    >
+                      View Letter
+                    </Link>
+
+                    {letter.downloadUrl && (
+                      <button
+                        onClick={() => handleDownloadDocx(letter)}
+                        disabled={downloadingId === letter.id}
+                        className="btn btn-secondary"
+                        style={{
+                          cursor:
+                            downloadingId === letter.id ? "wait" : "pointer",
+                          backgroundColor: "#28a745",
+                          color: "white",
+                        }}
+                      >
+                        {downloadingId === letter.id
+                          ? "Converting..."
+                          : "Download DOCX"}
                       </button>
                     )}
 
