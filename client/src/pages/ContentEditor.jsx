@@ -8,28 +8,54 @@ import { uploadData, getUrl } from "aws-amplify/storage";
 import { dataClient, authModes, fetchOptionLists } from "../lib/dataClient";
 import "../styles/ContentEditor.css";
 
+// Enhanced Quill modules with ALL formatting options
 const quillModules = {
     toolbar: [
-        [{ header: [1, 2, 3, false] }],
+        [{ header: [1, 2, 3, 4, 5, 6, false] }],
+        [{ font: [] }],
+        [{ size: ["8px", "10px", "12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px", "36px", "48px", "72px"] }],
         ["bold", "italic", "underline", "strike"],
+        [{ script: "sub" }, { script: "super" }],
+        [{ color: [] }, { background: [] }],
         [{ list: "ordered" }, { list: "bullet" }],
         [{ indent: "-1" }, { indent: "+1" }],
+        [{ direction: "rtl" }],
         [{ align: [] }],
-        ["link"],
+        ["blockquote", "code-block"],
+        ["link", "image", "video"],
+        ["clean"],
+    ],
+};
+
+// Simple toolbar for poem editor (less options needed)
+const poemQuillModules = {
+    toolbar: [
+        ["bold", "italic", "underline"],
+        [{ align: [] }],
         ["clean"],
     ],
 };
 
 const quillFormats = [
     "header",
+    "font",
+    "size",
     "bold",
     "italic",
     "underline",
     "strike",
+    "script",
+    "color",
+    "background",
     "list",
     "indent",
+    "direction",
     "align",
+    "blockquote",
+    "code-block",
     "link",
+    "image",
+    "video",
 ];
 
 function ContentEditorPage() {
@@ -64,6 +90,8 @@ function ContentEditorPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const [showEmailHtml, setShowEmailHtml] = useState(false);
+    const [showPoemHtml, setShowPoemHtml] = useState(false);
 
     useEffect(() => {
         loadOptions();
@@ -313,19 +341,37 @@ function ContentEditorPage() {
 
                             {/* Email Content Section */}
                             <div className="form-section">
-                                <h2>Email Content</h2>
+                                <div className="section-header">
+                                    <h2>Email Content</h2>
+                                    <button
+                                        type="button"
+                                        className="html-toggle-btn"
+                                        onClick={() => setShowEmailHtml(!showEmailHtml)}
+                                    >
+                                        {showEmailHtml ? "📝 Visual Editor" : "💻 HTML Source"}
+                                    </button>
+                                </div>
                                 <p style={{ color: "#94a3b8", fontSize: "0.875rem", marginBottom: "1rem" }}>
                                     Paste your email content here. You can paste directly from Word to preserve formatting.
                                 </p>
                                 <div className="editor-container">
-                                    <ReactQuill
-                                        theme="snow"
-                                        value={formData.emailContent}
-                                        onChange={handleEmailContentChange}
-                                        modules={quillModules}
-                                        formats={quillFormats}
-                                        placeholder="Paste or type your email content here..."
-                                    />
+                                    {showEmailHtml ? (
+                                        <textarea
+                                            className="html-source-editor"
+                                            value={formData.emailContent}
+                                            onChange={(e) => handleEmailContentChange(e.target.value)}
+                                            placeholder="<p>Enter your HTML content here...</p>"
+                                        />
+                                    ) : (
+                                        <ReactQuill
+                                            theme="snow"
+                                            value={formData.emailContent}
+                                            onChange={handleEmailContentChange}
+                                            modules={quillModules}
+                                            formats={quillFormats}
+                                            placeholder="Paste or type your email content here..."
+                                        />
+                                    )}
                                 </div>
                             </div>
 
@@ -382,18 +428,36 @@ function ContentEditorPage() {
                                         </div>
                                     </div>
                                     <div>
-                                        <h3 style={{ color: "#fff", fontSize: "1rem", marginBottom: "1rem" }}>
-                                            Poem Content
-                                        </h3>
+                                        <div className="section-header" style={{ marginBottom: "1rem" }}>
+                                            <h3 style={{ color: "#fff", fontSize: "1rem", margin: 0 }}>
+                                                Poem Content
+                                            </h3>
+                                            <button
+                                                type="button"
+                                                className="html-toggle-btn small"
+                                                onClick={() => setShowPoemHtml(!showPoemHtml)}
+                                            >
+                                                {showPoemHtml ? "📝 Editor" : "💻 HTML"}
+                                            </button>
+                                        </div>
                                         <div className="editor-container poem-editor">
-                                            <ReactQuill
-                                                theme="snow"
-                                                value={formData.poemContent}
-                                                onChange={handlePoemContentChange}
-                                                modules={quillModules}
-                                                formats={quillFormats}
-                                                placeholder="Paste or type your poem here..."
-                                            />
+                                            {showPoemHtml ? (
+                                                <textarea
+                                                    className="html-source-editor"
+                                                    value={formData.poemContent}
+                                                    onChange={(e) => handlePoemContentChange(e.target.value)}
+                                                    placeholder="<p>Enter your poem HTML here...</p>"
+                                                />
+                                            ) : (
+                                                <ReactQuill
+                                                    theme="snow"
+                                                    value={formData.poemContent}
+                                                    onChange={handlePoemContentChange}
+                                                    modules={poemQuillModules}
+                                                    formats={quillFormats}
+                                                    placeholder="Paste or type your poem here..."
+                                                />
+                                            )}
                                         </div>
                                     </div>
                                 </div>
