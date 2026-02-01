@@ -15,7 +15,7 @@
 /* Wrapper */
 .letter-detail-wrapper {
     min-height: 100vh;
-    background: #f0f0f0;
+    background: #ffffff;
     padding: 1.5rem;
 }
 
@@ -94,10 +94,10 @@
 }
 
 /* ===================== */
-/* SIDEBAR - Yellow/Gold */
+/* SIDEBAR - White Background with Card Sections */
 /* ===================== */
 .letter-sidebar {
-    background: var(--gold-primary);
+    background: var(--white);
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -167,7 +167,7 @@
 
 /* Ad Banner Section */
 .sidebar-ad-section {
-    background: var(--gold-primary);
+    background: transparent;
     padding: 0;
     margin-top: 12px;
 }
