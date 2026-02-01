@@ -62,7 +62,6 @@ function LetterDetail() {
     setDownloading("docx");
 
     try {
-      // Build clean HTML for conversion
       const cleanHtml = `
         <!DOCTYPE html>
         <html>
@@ -95,7 +94,6 @@ function LetterDetail() {
     setDownloading("pdf");
 
     try {
-      // Create a printable version and use browser's print to PDF
       const printWindow = window.open("", "_blank");
       if (!printWindow) {
         alert("Please allow popups to download PDF.");
@@ -146,7 +144,6 @@ function LetterDetail() {
       printWindow.document.close();
       printWindow.focus();
 
-      // Trigger print dialog after brief delay
       setTimeout(() => {
         printWindow.print();
         setDownloading(null);
@@ -174,7 +171,7 @@ function LetterDetail() {
           <div className="letter-not-found">
             <h2>Letter Not Found</h2>
             <p>The letter you're looking for doesn't exist.</p>
-            <Link to="/letters" className="sidebar-link">
+            <Link to="/letters" className="back-link">
               ← Back to Letters
             </Link>
           </div>
@@ -186,7 +183,7 @@ function LetterDetail() {
   return (
     <div className="letter-detail-wrapper">
       <div className="letter-detail-container">
-        {/* Header */}
+        {/* Header with Back Link */}
         <header className="letter-detail-header">
           <Link to="/letters" className="back-link">
             ← Back to Letters
@@ -198,80 +195,95 @@ function LetterDetail() {
           </div>
         </header>
 
-        {/* Main Layout */}
+        {/* Main Layout - 2 Columns */}
         <div className="letter-detail-layout">
-          {/* Left Sidebar */}
+          {/* Left Sidebar - Yellow/Gold */}
           <aside className="letter-sidebar">
-            {/* Image Section */}
-            {(sidebarImageUrl || letter.sidebarLinkUrl) && (
-              <div className="sidebar-card sidebar-image-section">
-                {sidebarImageUrl && (
-                  <img
-                    src={sidebarImageUrl}
-                    alt="Sponsor"
-                    className="sidebar-image"
-                  />
-                )}
-                {letter.sidebarLinkUrl && (
+            {/* Sponsor Image Section - Purple */}
+            <div className="sidebar-image-section">
+              {sidebarImageUrl && (
+                <img
+                  src={sidebarImageUrl}
+                  alt="Sponsor"
+                  className="sidebar-image"
+                />
+              )}
+              {letter.sidebarLinkUrl && (
+                <>
+                  <p className="sponsor-text">Sponsored by</p>
                   <a
                     href={letter.sidebarLinkUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="sidebar-link"
                   >
-                    {letter.sidebarLinkText || "Visit Website"} →
+                    {letter.sidebarLinkText || "Visit Website"}
                   </a>
-                )}
-              </div>
-            )}
+                </>
+              )}
+            </div>
 
-            {/* Poem Section */}
+            {/* Poem Section - Gray Background */}
             {letter.poemContent && (
-              <div className="sidebar-card sidebar-poem-section">
-                <h3>Poem</h3>
+              <div className="sidebar-poem-section">
+                <h3>{letter.poemTitle || "One Believing Adult"}</h3>
                 <div
                   className="poem-content"
                   dangerouslySetInnerHTML={{ __html: letter.poemContent }}
                 />
               </div>
             )}
+
+            {/* Ad Banner Section */}
+            <div className="sidebar-ad-section">
+              <div className="ad-banner">
+                <h4>Poem Book<br />Advertisement</h4>
+              </div>
+            </div>
           </aside>
 
-          {/* Main Content */}
+          {/* Main Content - White with Yellow Header */}
           <main className="letter-main-content">
-            <h1 className="letter-title">{letter.title}</h1>
+            {/* Title Header - Yellow */}
+            <div className="letter-title-header">
+              <h1 className="letter-title">{letter.title}</h1>
+            </div>
 
-            <div
-              className="email-content"
-              dangerouslySetInnerHTML={{ __html: letter.emailContent || "" }}
-            />
+            {/* Email Content - White */}
+            <div className="email-content-wrapper">
+              <div
+                className="email-content"
+                dangerouslySetInnerHTML={{ __html: letter.emailContent || "" }}
+              />
 
-            {/* Action Buttons Section */}
+              {/* Copy Button */}
+              {letter.emailContent && (
+                <button
+                  onClick={handleCopyEmail}
+                  className={`action-button copy-btn ${copied ? "copied" : ""}`}
+                >
+                  {copied ? "✓ Copied!" : "📋 Copy Text"}
+                </button>
+              )}
+            </div>
+
+            {/* Download Section */}
             <div className="letter-actions">
-              <div className="letter-actions-left">
-                {letter.emailContent && (
-                  <button
-                    onClick={handleCopyEmail}
-                    className={`action-button copy-btn ${copied ? "copied" : ""}`}
-                  >
-                    {copied ? "✓ Copied!" : "📋 Copy Text"}
-                  </button>
-                )}
-              </div>
-              <div className="letter-actions-right">
+              <span className="download-label">Download as</span>
+              <div className="download-buttons">
                 <button
                   onClick={handleDownloadDocx}
                   disabled={downloading === "docx"}
-                  className="action-button download-btn docx-btn"
+                  className="action-button docx-btn"
                 >
-                  {downloading === "docx" ? "Converting..." : "📄 Download DOCX"}
+                  {downloading === "docx" ? "..." : "DOCX"}
                 </button>
                 <button
                   onClick={handleDownloadPdf}
                   disabled={downloading === "pdf"}
-                  className="action-button download-btn pdf-btn"
+                  className="action-button pdf-btn"
                 >
-                  {downloading === "pdf" ? "Generating..." : "📑 Download PDF"}
+                  {downloading === "pdf" ? "..." : "PDF"}
                 </button>
               </div>
             </div>
