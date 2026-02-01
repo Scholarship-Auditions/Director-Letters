@@ -6,6 +6,16 @@ import { asBlob } from "html-docx-js-typescript";
 import { saveAs } from "file-saver";
 import "../styles/LetterDetail.css";
 
+// Helper function to sanitize HTML content - replace &nbsp; with regular spaces
+const sanitizeContent = (html) => {
+  if (!html) return "";
+  // Replace &nbsp; (and its variations) with regular spaces
+  return html
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#160;/g, " ")
+    .replace(/\u00A0/g, " ");
+};
+
 function LetterDetail() {
   const { id } = useParams();
   const [letter, setLetter] = useState(null);
@@ -229,7 +239,7 @@ function LetterDetail() {
                 <h3>{letter.poemTitle || "One Believing Adult"}</h3>
                 <div
                   className="poem-content"
-                  dangerouslySetInnerHTML={{ __html: letter.poemContent }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeContent(letter.poemContent) }}
                 />
               </div>
             )}
@@ -253,7 +263,7 @@ function LetterDetail() {
             <div className="email-content-wrapper">
               <div
                 className="email-content"
-                dangerouslySetInnerHTML={{ __html: letter.emailContent || "" }}
+                dangerouslySetInnerHTML={{ __html: sanitizeContent(letter.emailContent) }}
               />
 
               {/* Copy Button */}
