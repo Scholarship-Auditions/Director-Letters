@@ -256,7 +256,7 @@ function LetterDetail() {
           <main className="letter-main-content">
             {/* Title Header - Yellow */}
             <div className="letter-title-header">
-              <h1 className="letter-title">{letter.title}</h1>
+              <h2 className="letter-title">{letter.title}</h2>
             </div>
 
             {/* Email Content - White */}

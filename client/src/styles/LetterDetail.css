@@ -70,7 +70,7 @@
 /* Main Layout - With Gold Border Frame */
 .letter-detail-layout {
     display: grid;
-    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-columns: 350px minmax(0, 1fr);
     gap: 0;
     width: 100%;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -156,7 +156,7 @@
 
 .poem-content {
     color: var(--text-medium);
-    font-size: 0.9rem;
+    font-size: larger;
     line-height: 1.7;
 }
 
@@ -228,7 +228,7 @@
 
 .email-content {
     color: var(--text-dark);
-    font-size: 1rem;
+    font-size: larger;
     line-height: 1.8;
     word-wrap: break-word;
     overflow-wrap: break-word;
