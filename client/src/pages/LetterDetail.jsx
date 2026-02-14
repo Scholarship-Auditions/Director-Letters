@@ -9,7 +9,6 @@ import "../styles/LetterDetail.css";
 // Helper function to sanitize HTML content - replace &nbsp; with regular spaces
 const sanitizeContent = (html) => {
   if (!html) return "";
-  // Replace &nbsp; (and its variations) with regular spaces
   return html
     .replace(/&nbsp;/g, " ")
     .replace(/&#160;/g, " ")
@@ -19,8 +18,10 @@ const sanitizeContent = (html) => {
 function LetterDetail() {
   const { id } = useParams();
   const [letter, setLetter] = useState(null);
+  const [poem, setPoem] = useState(null);
+  const [ad, setAd] = useState(null);
+  const [adImageUrl, setAdImageUrl] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [sidebarImageUrl, setSidebarImageUrl] = useState(null);
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(null);
 
@@ -33,13 +34,36 @@ function LetterDetail() {
         if (data) {
           setLetter(data);
 
-          // Get signed URL for sidebar image if exists
-          if (data.sidebarImage) {
+          // Fetch poem by poemId
+          if (data.poemId) {
             try {
-              const { url } = await getUrl({ path: data.sidebarImage });
-              setSidebarImageUrl(url.toString());
-            } catch (imgErr) {
-              console.error("Failed to load sidebar image:", imgErr);
+              const { data: poemData } = await dataClient.models.Poem.get(
+                { id: data.poemId },
+                authModes.read
+              );
+              if (poemData) setPoem(poemData);
+            } catch (poemErr) {
+              console.error("Failed to load poem:", poemErr);
+            }
+          }
+
+          // Fetch advertisement by advertisementId
+          if (data.advertisementId) {
+            try {
+              const { data: adData } = await dataClient.models.Advertisement.get(
+                { id: data.advertisementId },
+                authModes.read
+              );
+              if (adData) {
+                setAd(adData);
+                // Get signed URL for ad image
+                if (adData.image) {
+                  const { url } = await getUrl({ path: adData.image });
+                  setAdImageUrl(url.toString());
+                }
+              }
+            } catch (adErr) {
+              console.error("Failed to load advertisement:", adErr);
             }
           }
         }
@@ -67,11 +91,20 @@ function LetterDetail() {
     }
   };
 
+  // Strip HTML tags from title for filenames and plain text usage
+  const getPlainTitle = () => {
+    if (!letter?.title) return "Letter";
+    const div = document.createElement("div");
+    div.innerHTML = letter.title;
+    return div.textContent || div.innerText || "Letter";
+  };
+
   const handleDownloadDocx = async () => {
     if (!letter?.emailContent) return;
     setDownloading("docx");
 
     try {
+      const plainTitle = getPlainTitle();
       const cleanHtml = `
         <!DOCTYPE html>
         <html>
@@ -83,14 +116,14 @@ function LetterDetail() {
             </style>
           </head>
           <body>
-            <h1>${letter.title}</h1>
+            <h1>${plainTitle}</h1>
             ${letter.emailContent}
           </body>
         </html>
       `;
 
       const buffer = await asBlob(cleanHtml, { orientation: "portrait" });
-      saveAs(buffer, `${letter.title}.docx`);
+      saveAs(buffer, `${plainTitle}.docx`);
     } catch (error) {
       console.error("DOCX conversion failed:", error);
       alert("Could not generate DOCX file.");
@@ -104,6 +137,7 @@ function LetterDetail() {
     setDownloading("pdf");
 
     try {
+      const plainTitle = getPlainTitle();
       const printWindow = window.open("", "_blank");
       if (!printWindow) {
         alert("Please allow popups to download PDF.");
@@ -116,7 +150,7 @@ function LetterDetail() {
         <html>
           <head>
             <meta charset="UTF-8">
-            <title>${letter.title}</title>
+            <title>${plainTitle}</title>
             <style>
               body { 
                 font-family: 'Times New Roman', serif; 
@@ -140,7 +174,7 @@ function LetterDetail() {
             </style>
           </head>
           <body>
-            <h1>${letter.title}</h1>
+            <h1>${plainTitle}</h1>
             <div class="meta">
               <strong>Category:</strong> ${letter.categoryName} | 
               <strong>Writer:</strong> ${letter.writerName} | 
@@ -207,39 +241,41 @@ function LetterDetail() {
 
         {/* Main Layout - 2 Columns */}
         <div className="letter-detail-layout">
-          {/* Left Sidebar - Yellow/Gold */}
+          {/* Left Sidebar */}
           <aside className="letter-sidebar">
-            {/* Sponsor Image Section - Purple */}
-            <div className="sidebar-image-section">
-              {sidebarImageUrl && (
-                <img
-                  src={sidebarImageUrl}
-                  alt="Sponsor"
-                  className="sidebar-image"
-                />
-              )}
-              {letter.sidebarLinkUrl && (
-                <>
-                  <p className="sponsor-text">Sponsored by</p>
-                  <a
-                    href={letter.sidebarLinkUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="sidebar-link"
-                  >
-                    {letter.sidebarLinkText || "Visit Website"}
-                  </a>
-                </>
-              )}
-            </div>
+            {/* Advertisement Image Section */}
+            {ad && (
+              <div className="sidebar-image-section">
+                {adImageUrl && (
+                  <img
+                    src={adImageUrl}
+                    alt={ad.linkText}
+                    className="sidebar-image"
+                  />
+                )}
+                {ad.linkUrl && (
+                  <>
+                    <p className="sponsor-text">Sponsored by</p>
+                    <a
+                      href={ad.linkUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="sidebar-link"
+                    >
+                      {ad.linkText || "Visit Website"}
+                    </a>
+                  </>
+                )}
+              </div>
+            )}
 
-            {/* Poem Section - Gray Background */}
-            {letter.poemContent && (
+            {/* Poem Section */}
+            {poem && (
               <div className="sidebar-poem-section">
-                <h3>{letter.poemTitle || "One Believing Adult"}</h3>
+                <h3>{poem.title}</h3>
                 <div
                   className="poem-content"
-                  dangerouslySetInnerHTML={{ __html: sanitizeContent(letter.poemContent) }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeContent(poem.content) }}
                 />
               </div>
             )}
@@ -252,11 +288,14 @@ function LetterDetail() {
             </div>
           </aside>
 
-          {/* Main Content - White with Yellow Header */}
+          {/* Main Content */}
           <main className="letter-main-content">
-            {/* Title Header - Yellow */}
+            {/* Title Header - Yellow - now renders rich HTML */}
             <div className="letter-title-header">
-              <h2 className="letter-title">{letter.title}</h2>
+              <div
+                className="letter-title"
+                dangerouslySetInnerHTML={{ __html: letter.title }}
+              />
             </div>
 
             {/* Email Content - White */}

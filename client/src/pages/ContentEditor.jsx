@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { Authenticator, useAuthenticator } from "@aws-amplify/ui-react";
+import { Authenticator } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
-import { uploadData, getUrl } from "aws-amplify/storage";
-import { dataClient, authModes, fetchOptionLists } from "../lib/dataClient";
+import { dataClient, authModes, fetchOptionLists, fetchPoems, fetchAdvertisements } from "../lib/dataClient";
 import "../styles/ContentEditor.css";
 
 // Enhanced Quill modules with ALL formatting options
@@ -27,14 +26,16 @@ const quillModules = {
     ],
 };
 
-// Simple toolbar for poem editor (less options needed)
-const poemQuillModules = {
+// Simple toolbar for title editor
+const titleQuillModules = {
     toolbar: [
         ["bold", "italic", "underline"],
-        [{ align: [] }],
+        [{ color: [] }],
         ["clean"],
     ],
 };
+
+const titleQuillFormats = ["bold", "italic", "underline", "color"];
 
 const quillFormats = [
     "header",
@@ -62,7 +63,6 @@ function ContentEditorPage() {
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditing = Boolean(id);
-    const fileInputRef = useRef(null);
 
     const [formData, setFormData] = useState({
         title: "",
@@ -73,10 +73,8 @@ function ContentEditorPage() {
         recipientId: "",
         recipientName: "",
         emailContent: "",
-        sidebarImage: "",
-        sidebarLinkText: "",
-        sidebarLinkUrl: "",
-        poemContent: "",
+        poemId: "",
+        advertisementId: "",
     });
 
     const [options, setOptions] = useState({
@@ -85,62 +83,94 @@ function ContentEditorPage() {
         lettercategories: [],
     });
 
-    const [imagePreview, setImagePreview] = useState(null);
-    const [imageFile, setImageFile] = useState(null);
+    const [poems, setPoems] = useState([]);
+    const [ads, setAds] = useState([]);
+    const [allLetters, setAllLetters] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [showEmailHtml, setShowEmailHtml] = useState(false);
-    const [showPoemHtml, setShowPoemHtml] = useState(false);
 
     useEffect(() => {
-        loadOptions();
-        if (isEditing) {
-            loadLetter();
-        }
+        loadAll();
     }, [id]);
 
-    const loadOptions = async () => {
-        try {
-            const data = await fetchOptionLists();
-            setOptions(data);
-        } catch (err) {
-            console.error("Failed to load options:", err);
-            setError("Failed to load dropdown options.");
-        }
-    };
-
-    const loadLetter = async () => {
+    const loadAll = async () => {
         try {
             setLoading(true);
-            const { data } = await dataClient.models.Letter.get({ id }, authModes.read);
-            if (data) {
-                setFormData({
-                    title: data.title || "",
-                    categoryId: data.categoryId || "",
-                    categoryName: data.categoryName || "",
-                    writerId: data.writerId || "",
-                    writerName: data.writerName || "",
-                    recipientId: data.recipientId || "",
-                    recipientName: data.recipientName || "",
-                    emailContent: data.emailContent || "",
-                    sidebarImage: data.sidebarImage || "",
-                    sidebarLinkText: data.sidebarLinkText || "",
-                    sidebarLinkUrl: data.sidebarLinkUrl || "",
-                    poemContent: data.poemContent || "",
-                });
+            const [optData, poemData, adData, letterList] = await Promise.all([
+                fetchOptionLists(),
+                fetchPoems(),
+                fetchAdvertisements(),
+                dataClient.models.Letter.list(authModes.read),
+            ]);
 
-                if (data.sidebarImage) {
-                    const { url } = await getUrl({ path: data.sidebarImage });
-                    setImagePreview(url.toString());
+            setOptions(optData);
+            setPoems(poemData);
+            setAds(adData);
+            setAllLetters(letterList.data || []);
+
+            if (isEditing) {
+                const { data } = await dataClient.models.Letter.get({ id }, authModes.read);
+                if (data) {
+                    setFormData({
+                        title: data.title || "",
+                        categoryId: data.categoryId || "",
+                        categoryName: data.categoryName || "",
+                        writerId: data.writerId || "",
+                        writerName: data.writerName || "",
+                        recipientId: data.recipientId || "",
+                        recipientName: data.recipientName || "",
+                        emailContent: data.emailContent || "",
+                        poemId: data.poemId || "",
+                        advertisementId: data.advertisementId || "",
+                    });
                 }
+            } else {
+                // Auto-assign least-used poem and ad for new letters
+                const existingLetters = letterList.data || [];
+                const autoPoem = getLeastUsed(poemData, existingLetters, "poemId");
+                const autoAd = getLeastUsed(adData, existingLetters, "advertisementId");
+
+                setFormData((prev) => ({
+                    ...prev,
+                    poemId: autoPoem || "",
+                    advertisementId: autoAd || "",
+                }));
             }
         } catch (err) {
-            console.error("Failed to load letter:", err);
-            setError("Failed to load letter for editing.");
+            console.error("Failed to load data:", err);
+            setError("Failed to load form data.");
         } finally {
             setLoading(false);
         }
+    };
+
+    /**
+     * Auto-assignment: returns the ID of the item used the fewest times
+     */
+    const getLeastUsed = (items, letters, field) => {
+        if (!items.length) return "";
+
+        // Count usage of each item
+        const usageMap = {};
+        items.forEach((item) => (usageMap[item.id] = 0));
+        letters.forEach((letter) => {
+            if (letter[field] && usageMap[letter[field]] !== undefined) {
+                usageMap[letter[field]]++;
+            }
+        });
+
+        // Find the one with the lowest count
+        let minCount = Infinity;
+        let minId = items[0].id;
+        for (const [itemId, count] of Object.entries(usageMap)) {
+            if (count < minCount) {
+                minCount = count;
+                minId = itemId;
+            }
+        }
+        return minId;
     };
 
     const handleChange = (e) => {
@@ -176,24 +206,8 @@ function ContentEditorPage() {
         setFormData((prev) => ({ ...prev, emailContent: value }));
     };
 
-    const handlePoemContentChange = (value) => {
-        setFormData((prev) => ({ ...prev, poemContent: value }));
-    };
-
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setImageFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const triggerImageUpload = () => {
-        fileInputRef.current?.click();
+    const handleTitleChange = (value) => {
+        setFormData((prev) => ({ ...prev, title: value }));
     };
 
     const handleSubmit = async (e) => {
@@ -208,21 +222,6 @@ function ContentEditorPage() {
                 throw new Error("Please fill in all required fields (Title, Category, Writer, Recipient).");
             }
 
-            let sidebarImagePath = formData.sidebarImage;
-
-            // Upload image if new one selected
-            if (imageFile) {
-                const imageKey = `content-images/${Date.now()}-${imageFile.name}`;
-                await uploadData({
-                    path: imageKey,
-                    data: imageFile,
-                    options: {
-                        contentType: imageFile.type,
-                    },
-                });
-                sidebarImagePath = imageKey;
-            }
-
             const letterData = {
                 title: formData.title,
                 categoryId: formData.categoryId,
@@ -232,10 +231,8 @@ function ContentEditorPage() {
                 recipientId: formData.recipientId,
                 recipientName: formData.recipientName,
                 emailContent: formData.emailContent,
-                sidebarImage: sidebarImagePath,
-                sidebarLinkText: formData.sidebarLinkText,
-                sidebarLinkUrl: formData.sidebarLinkUrl,
-                poemContent: formData.poemContent,
+                poemId: formData.poemId || null,
+                advertisementId: formData.advertisementId || null,
             };
 
             if (isEditing) {
@@ -253,6 +250,11 @@ function ContentEditorPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Get usage count for a given poem/ad
+    const getUsageCount = (itemId, field) => {
+        return allLetters.filter((l) => l[field] === itemId).length;
     };
 
     return (
@@ -274,19 +276,24 @@ function ContentEditorPage() {
                             {/* Basic Info Section */}
                             <div className="form-section">
                                 <h2>Letter Details</h2>
+
+                                {/* Title - Rich Text */}
                                 <div className="form-row">
                                     <div className="form-field">
-                                        <label>Title *</label>
-                                        <input
-                                            type="text"
-                                            name="title"
-                                            value={formData.title}
-                                            onChange={handleChange}
-                                            placeholder="Enter letter title"
-                                            required
-                                        />
+                                        <label>Title * (Rich Text)</label>
+                                        <div className="editor-container title-editor">
+                                            <ReactQuill
+                                                theme="snow"
+                                                value={formData.title}
+                                                onChange={handleTitleChange}
+                                                modules={titleQuillModules}
+                                                formats={titleQuillFormats}
+                                                placeholder="Enter letter title..."
+                                            />
+                                        </div>
                                     </div>
                                 </div>
+
                                 <div className="form-row">
                                     <div className="form-field">
                                         <label>Category *</label>
@@ -339,6 +346,46 @@ function ContentEditorPage() {
                                 </div>
                             </div>
 
+                            {/* Poem & Ad Assignment Section */}
+                            <div className="form-section">
+                                <h2>Poem & Advertisement Assignment</h2>
+                                <p style={{ color: "#94a3b8", fontSize: "0.875rem", marginBottom: "1rem" }}>
+                                    The least-used poem and ad are auto-selected. You can override by choosing a different one.
+                                </p>
+                                <div className="form-row">
+                                    <div className="form-field">
+                                        <label>Poem</label>
+                                        <select
+                                            name="poemId"
+                                            value={formData.poemId}
+                                            onChange={handleChange}
+                                        >
+                                            <option value="">-- No Poem --</option>
+                                            {poems.map((poem) => (
+                                                <option key={poem.id} value={poem.id}>
+                                                    {poem.title} (used {getUsageCount(poem.id, "poemId")}×)
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="form-field">
+                                        <label>Advertisement</label>
+                                        <select
+                                            name="advertisementId"
+                                            value={formData.advertisementId}
+                                            onChange={handleChange}
+                                        >
+                                            <option value="">-- No Ad --</option>
+                                            {ads.map((ad) => (
+                                                <option key={ad.id} value={ad.id}>
+                                                    {ad.linkText} (used {getUsageCount(ad.id, "advertisementId")}×)
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Email Content Section */}
                             <div className="form-section">
                                 <div className="section-header">
@@ -372,94 +419,6 @@ function ContentEditorPage() {
                                             placeholder="Paste or type your email content here..."
                                         />
                                     )}
-                                </div>
-                            </div>
-
-                            {/* Sidebar Content Section */}
-                            <div className="form-section">
-                                <h2>Sidebar Content</h2>
-                                <div className="sidebar-grid">
-                                    <div>
-                                        <h3 style={{ color: "#fff", fontSize: "1rem", marginBottom: "1rem" }}>
-                                            Image & Link
-                                        </h3>
-                                        <div className="image-upload-section">
-                                            <div className="image-preview">
-                                                {imagePreview ? (
-                                                    <img src={imagePreview} alt="Sidebar preview" />
-                                                ) : (
-                                                    <span className="placeholder">No image uploaded</span>
-                                                )}
-                                            </div>
-                                            <input
-                                                type="file"
-                                                ref={fileInputRef}
-                                                onChange={handleImageUpload}
-                                                accept="image/*"
-                                                className="image-upload-input"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={triggerImageUpload}
-                                                className="upload-button"
-                                            >
-                                                {imagePreview ? "Change Image" : "Upload Image"}
-                                            </button>
-                                        </div>
-                                        <div className="form-field" style={{ marginTop: "1rem" }}>
-                                            <label>Link Text</label>
-                                            <input
-                                                type="text"
-                                                name="sidebarLinkText"
-                                                value={formData.sidebarLinkText}
-                                                onChange={handleChange}
-                                                placeholder="e.g. Visit Our Sponsor"
-                                            />
-                                        </div>
-                                        <div className="form-field">
-                                            <label>Link URL</label>
-                                            <input
-                                                type="url"
-                                                name="sidebarLinkUrl"
-                                                value={formData.sidebarLinkUrl}
-                                                onChange={handleChange}
-                                                placeholder="https://example.com"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div className="section-header" style={{ marginBottom: "1rem" }}>
-                                            <h3 style={{ color: "#fff", fontSize: "1rem", margin: 0 }}>
-                                                Poem Content
-                                            </h3>
-                                            <button
-                                                type="button"
-                                                className="html-toggle-btn small"
-                                                onClick={() => setShowPoemHtml(!showPoemHtml)}
-                                            >
-                                                {showPoemHtml ? "📝 Editor" : "💻 HTML"}
-                                            </button>
-                                        </div>
-                                        <div className="editor-container poem-editor">
-                                            {showPoemHtml ? (
-                                                <textarea
-                                                    className="html-source-editor"
-                                                    value={formData.poemContent}
-                                                    onChange={(e) => handlePoemContentChange(e.target.value)}
-                                                    placeholder="<p>Enter your poem HTML here...</p>"
-                                                />
-                                            ) : (
-                                                <ReactQuill
-                                                    theme="snow"
-                                                    value={formData.poemContent}
-                                                    onChange={handlePoemContentChange}
-                                                    modules={poemQuillModules}
-                                                    formats={quillFormats}
-                                                    placeholder="Paste or type your poem here..."
-                                                />
-                                            )}
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
 

@@ -1,0 +1,170 @@
+/* Manage Advertisements Styles */
+.manage-ads-wrapper {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+.manage-ads {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Reuse manage-header, msg, form-field, form-actions, btn-* from ManagePoems.css */
+
+/* Ad Form */
+.ad-form {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 2rem;
+}
+
+.ad-form h2 {
+    color: #fff;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 1.25rem 0;
+}
+
+.ad-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .ad-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Image Upload */
+.image-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.image-preview {
+    width: 100%;
+    max-width: 280px;
+    aspect-ratio: 16/9;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+}
+
+.image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-preview .placeholder {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.upload-button {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    width: fit-content;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.upload-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+}
+
+/* Ads List */
+.ads-list-section {
+    margin-top: 2rem;
+}
+
+.ads-list-section h2 {
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.ads-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.ad-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.ad-card:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.ad-card-image {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.ad-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ad-card-image .placeholder {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.ad-card-info {
+    padding: 1rem 1.25rem;
+}
+
+.ad-card-info h3 {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+}
+
+.ad-url {
+    color: #a5b4fc;
+    font-size: 0.8rem;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.ad-url:hover {
+    text-decoration: underline;
+}
+
+.ad-card-actions {
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    gap: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}

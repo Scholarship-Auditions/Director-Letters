@@ -9,6 +9,8 @@ import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
 import ContentEditor from "./pages/ContentEditor";
 import ManageLetters from "./pages/ManageLetters";
+import ManagePoems from "./pages/ManagePoems";
+import ManageAds from "./pages/ManageAds";
 import LetterDetail from "./pages/LetterDetail";
 import "./styles/home-styles.css";
 
@@ -71,6 +73,8 @@ function App() {
         <Route path="content-editor" element={<ContentEditor />} />
         <Route path="content-editor/:id" element={<ContentEditor />} />
         <Route path="manage-letters" element={<ManageLetters />} />
+        <Route path="manage-poems" element={<ManagePoems />} />
+        <Route path="manage-ads" element={<ManageAds />} />
       </Routes>
     </BrowserRouter>
   );

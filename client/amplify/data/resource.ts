@@ -31,21 +31,40 @@ const schema = a.schema({
       allow.authenticated(), // ✅ Admin Write
     ]),
 
-  // 4. Main Letter Model
+  // 4. Poem Model (separate pool)
+  Poem: a
+    .model({
+      title: a.string().required(),       // e.g. "One Believing Adult"
+      content: a.string().required(),     // Rich HTML from Quill
+    })
+    .authorization((allow) => [
+      allow.publicApiKey().to(["read"]),
+      allow.authenticated(),
+    ]),
+
+  // 5. Advertisement Model (separate pool)
+  Advertisement: a
+    .model({
+      image: a.string().required(),       // S3 key for uploaded image
+      linkText: a.string().required(),    // Display text for the link
+      linkUrl: a.string().required(),     // URL the link points to
+    })
+    .authorization((allow) => [
+      allow.publicApiKey().to(["read"]),
+      allow.authenticated(),
+    ]),
+
+  // 6. Main Letter Model
   Letter: a
     .model({
-      title: a.string().required(),
+      title: a.string().required(),       // Rich HTML from Quill
 
       // Email Section
       emailContent: a.string(),           // Rich HTML from Quill
 
-      // Sidebar - Image Section
-      sidebarImage: a.string(),            // S3 key for uploaded image
-      sidebarLinkText: a.string(),         // Text displayed for the link
-      sidebarLinkUrl: a.string(),          // URL the link points to
-
-      // Sidebar - Poem Section
-      poemContent: a.string(),             // Rich HTML from Quill
+      // References to separate pools
+      poemId: a.string(),                 // Reference to Poem model
+      advertisementId: a.string(),        // Reference to Advertisement model
 
       // Filtering fields
       writerId: a.string().required(),

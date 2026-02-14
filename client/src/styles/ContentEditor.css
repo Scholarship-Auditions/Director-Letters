@@ -543,3 +543,14 @@
     transform: rotate(360deg);
   }
 }
+
+/* Title Editor - compact Quill */
+.title-editor .ql-container {
+  min-height: 50px;
+}
+
+.title-editor .ql-editor {
+  min-height: 50px;
+  font-size: 1.2rem;
+  font-weight: 600;
+}

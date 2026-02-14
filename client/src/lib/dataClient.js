@@ -25,6 +25,16 @@ export const fetchOptionLists = async () => {
   };
 };
 
+export const fetchPoems = async () => {
+  const { data } = await dataClient.models.Poem.list(authModes.read);
+  return data ?? [];
+};
+
+export const fetchAdvertisements = async () => {
+  const { data } = await dataClient.models.Advertisement.list(authModes.read);
+  return data ?? [];
+};
+
 export const uploadLetterFile = async (file) => {
   if (!file) return null;
 

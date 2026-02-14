@@ -206,6 +206,12 @@ const AdminDashboard = () => {
                 <Link to="/manage-letters" className="secondary-button">
                   Manage Letters
                 </Link>
+                <Link to="/manage-poems" className="secondary-button">
+                  Manage Poems
+                </Link>
+                <Link to="/manage-ads" className="secondary-button">
+                  Manage Ads
+                </Link>
                 <button type="button" className="secondary-button" onClick={signOut}>
                   Sign out
                 </button>

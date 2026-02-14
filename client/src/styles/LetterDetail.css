@@ -218,6 +218,10 @@
     line-height: 1.3;
 }
 
+.letter-title p {
+    margin: 0;
+}
+
 /* Email Content */
 .email-content-wrapper {
     padding: 2.5rem;
